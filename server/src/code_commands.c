@@ -27,6 +27,7 @@ struct process *find_process(char *key, int key_sz) {
 }
 
 int process_compile(struct server *server, char *c_file, char *elf_file, char *dst, int dst_sz, int *produced_ptr) {
+	int produced = 0;
 	char log_file[1024];
 	snprintf(log_file, sizeof(log_file), "%s.log", elf_file);
 	
@@ -37,13 +38,16 @@ int process_compile(struct server *server, char *c_file, char *elf_file, char *d
 			server->vx32sdk_path, elf_file, c_file, log_file);
 	int r = system(cmd);
 	
+	produced += snprintf(dst+produced, dst_sz-produced, "%s\n\n",cmd);
+	
 	int fd = open(log_file, O_RDONLY);
 	if(fd >= 0) {
-		*produced_ptr = MAX(0, read(fd, dst, dst_sz));
+		produced += MAX(0, read(fd, dst+produced, dst_sz-produced));
 		close(fd);
 		unlink(log_file);
 	}
 	
+	*produced_ptr = produced;
 	return(r);
 }
 
@@ -86,9 +90,9 @@ int process_test_str(struct server *server, char *value, int value_sz, char *key
 	}
 	struct process *process = process_new(NULL, keyprefix, strlen(keyprefix));
 	r = process_load(process, elf_file);
-	if(NEVER(0 != r)) {
+	if(0 != r) {
 		process_free(process);
-		log_error("unable to load process");
+		log_error("unable to load process:\n%s", warn_buf);
 		return(-1);
 	}
 	r = process_run(NULL, process);

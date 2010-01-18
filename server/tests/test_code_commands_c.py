@@ -24,7 +24,8 @@ int main(int argc, char **argv) {
 }
 '''
         x = flatten_run_error(mc, c)
-        self.assertEqual("warning: control reaches end of non-void function" in x.strip(), True)
+        print x
+        self.assertEqual("warning: control reaches end of non-void function" in x, True)
 
     @connect
     def test_assert(self, mc):
@@ -40,7 +41,7 @@ int main(int argc, char **argv) {
 }
 '''
         x = flatten_run_error(mc, c)
-        self.assertEqual(x.strip(), 'Error while running the binary')
+        self.assertEqual('Error while running the binary' in x, True)
 
     @connect
     def test_segv(self, mc):
@@ -56,7 +57,7 @@ int main(int argc, char **argv) {
 }
 '''
         x = flatten_run_error(mc, c)
-        self.assertEqual(x.strip(), 'Error while running the binary')
+        self.assertEqual('Error while running the binary' in x, True)
 
     @connect
     def test02(self, mc):
@@ -93,7 +94,7 @@ int main(int argc, char **argv) {
 }
 '''
         x = flatten_run_error(mc, c)
-        self.assertEqual(x.strip(), 'Error while running the binary')
+        self.assertEqual('Error while running the binary' in x, True)
 
 
     @connect
