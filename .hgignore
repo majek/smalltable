@@ -4,4 +4,5 @@ syntax: glob
 *.gcda
 *.gcno
 *.gcov
+server/vx32/src/libvx32/asm-sym.s
 

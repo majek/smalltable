@@ -3,7 +3,8 @@ import sys
 import random
 from server_runner import start_server, stop_server
 
-cmd = sys.argv[1]
+cmd = ' '.join(sys.argv[1:])
+
 suffix = " >/dev/null 2>/dev/null"
 
 #start_server(port, server_cmd, logname='tests-cmdline.log')
