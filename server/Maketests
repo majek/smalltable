@@ -1,0 +1,30 @@
+.PHONY: tests foreground-tests
+
+PYTHON:=python
+PORT:=$(shell $(PYTHON) -c "import random as r; print r.randint(32768, 65535)")
+
+BLACKLIST=\
+	src/sto_fs.c	\
+	src/sto_dumb.c	\
+	src/sto_ydb.c	\
+	src/sto_bdb.c	\
+	src/sto_tc.c
+
+tests: smalltable-cov
+	rm -f src/*.c.gcov src/cov/*.gcda
+	$(PYTHON) tests/server_runner.py $(PORT)		\
+		"./smalltable-cov -x --port $(PORT)"		\
+		"SERVERPORT=$(PORT) PYTHONPATH=.:../client \
+					$(PYTHON) tests/run.py tests ./tests"
+	$(PYTHON) tests/check_server_command_line.py ./smalltable-cov
+	@(cd src; for cfile in *.c; do \
+			gcov -o cov -bc $$cfile >/dev/null 2>/dev/null ; \
+		done; )
+	@echo -e "\n***** Coverage C *****"
+	@python gcovst.py "$(BLACKLIST)" src
+	@pgrep smalltable || true
+
+
+foreground-tests:
+	SERVERPORT=22122 PYTHONPATH=.:../client \
+					$(PYTHON) tests/run.py tests ./tests

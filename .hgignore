@@ -1,0 +1,7 @@
+syntax: glob
+*.pyc
+*.o
+*.gcda
+*.gcno
+*.gcov
+

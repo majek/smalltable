@@ -1,0 +1,72 @@
+.PHONY: untrusted
+
+UNTRUSTED=untrusted
+VX32DIR=vx32/src
+
+$(VX32DIR)/libvx32/libvx32.a:
+	make -C $(VX32DIR) libvx32/libvx32.a
+
+OBJS+=$(VX32DIR)/libvx32/libvx32.a
+
+smalltable:: $(VX32DIR)/libvx32/libvx32.a $(UNTRUSTED)
+smalltable-cov:: $(VX32DIR)/libvx32/libvx32.a $(UNTRUSTED)
+smalltable-prof:: $(VX32DIR)/libvx32/libvx32.a $(UNTRUSTED)
+
+
+UNTRUSTED_OBJS=\
+	$(UNTRUSTED)/include	\
+	$(UNTRUSTED)/crt0.o \
+	$(UNTRUSTED)/libc.a \
+	$(UNTRUSTED)/libst.a	\
+	$(UNTRUSTED)/elf_i386_0x00048000.x	\
+	$(UNTRUSTED)/include/smalltable.h
+
+$(UNTRUSTED)/crt0.o:
+	make -C $(VX32DIR) libvxc/vx32/crt0.o
+	mv $(VX32DIR)/libvxc/vx32/crt0.o $(UNTRUSTED)
+
+$(UNTRUSTED)/libc.a:
+	make -C $(VX32DIR) libvxc/libc.a
+	mv $(VX32DIR)/libvxc/libc.a $(UNTRUSTED)
+
+$(UNTRUSTED)/include:
+	[ -e $(UNTRUSTED)/include/arpa ] || mkdir -p $(UNTRUSTED)/include/arpa
+	[ -e $(UNTRUSTED)/include/sys ] || mkdir -p $(UNTRUSTED)/include/sys
+	cp -ua $(VX32DIR)/libvxc/include/*h $(UNTRUSTED)/include
+	cp -ua $(VX32DIR)/libvxc/include/arpa/*h $(UNTRUSTED)/include/arpa
+	cp -ua $(VX32DIR)/libvxc/include/sys/*h $(UNTRUSTED)/include/sys
+
+$(UNTRUSTED)/elf_i386_0x00048000.x:
+	cp libst/elf_i386_0x00048000.x $(UNTRUSTED)
+	
+$(UNTRUSTED)/include/smalltable.h:
+	cp libst/smalltable.h $(UNTRUSTED)/include
+
+untrusted: $(UNTRUSTED_OBJS)
+
+clean::
+	rm -rf untrusted
+
+
+LIBST_OBJS=libst/smalltable.o
+CLEAN_FILES+=libst/smalltable.o
+
+VX32COPTS=-m32 \
+			-I$(VX32DIR) \
+			-ggdb \
+			-mfp-ret-in-387 \
+			-I $(UNTRUSTED)/include
+
+
+libst/%.o: libst/%.c
+	$(CC) $(VX32COPTS) -c -o $@ $<
+
+AR=ar
+
+$(UNTRUSTED)/libst.a: $(LIBST_OBJS)
+	$(AR) r $@ $<
+
+	
+
+clean::
+	make -C $(VX32DIR) clean
