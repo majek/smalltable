@@ -13,7 +13,7 @@ char *default_vx32sdk_gcc_command[] = {
 	"LC_ALL=C; P=%s; gcc -m32 -Wall -O2 -g ",
 	" -Wl,-melf_i386,-Telf_i386_0x00048000.x ",
 	" -nostdlib -mfp-ret-in-387 $P/crt0.o -o %s %s ",
-	" -I$P/include -L$P -lst -lc -lgcc 2>&1 > %s"};
+	" -I$P/include -L$P -lst -lc -lgcc >%s 2>&1"};
 
 
 

@@ -84,7 +84,7 @@ int process_test_str(struct server *server, char *value, int value_sz, char *key
 	char warn_buf[4096];
 	int warn_buf_sz = 0;
 	if(0 != process_compile(server, c_file, elf_file, warn_buf, sizeof(warn_buf), &warn_buf_sz)) {
-		warn_buf[warn_buf_sz-1] = '\0';
+		warn_buf[MAX(1, warn_buf_sz)-1] = '\0';
 		log_error("compilation failed:\n%s", warn_buf);
 		return(-1);
 	}

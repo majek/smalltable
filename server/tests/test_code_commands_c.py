@@ -24,7 +24,6 @@ int main(int argc, char **argv) {
 }
 '''
         x = flatten_run_error(mc, c)
-        print x
         self.assertEqual("warning: control reaches end of non-void function" in x, True)
 
     @connect
