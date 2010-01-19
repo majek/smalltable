@@ -22,7 +22,7 @@ enum {
 
 extern int vx_elfbigmem;
 
-void process_initialize(struct server *server) {
+void process_initialize(struct config *config) {
 	vx_elfbigmem = 0;
 	vx32_siginit();
 	
@@ -42,7 +42,7 @@ void process_initialize(struct server *server) {
 		"#include <smalltable.h>\n"
 		"int main() { __exit(112); }\n";
 	
-	if(112 != process_test_str(server, code, strlen(code), "testcode")) {
+	if(112 != process_test_str(config, code, strlen(code), "testcode")) {
 		fatal("Unable to run test code. Check your gcc and vx32sdk paths.");
 	}
 	return;
@@ -113,7 +113,7 @@ void process_commands_callback(CONN *conn, char *req_buf, int req_buf_sz, struct
 		log_warn("#%p no reposne given", process);
 		goto error;
 	}
-	if(conn && conn->server->trace)
+	if(conn && CONFIG(conn)->trace)
 		log_warn("#%p sending %i", process, process->send_sz);
 	return;
 	
@@ -329,12 +329,12 @@ int syscall_st_get(CONN *conn, struct process *process, vxproc *proc, vxmmap *m,
 	char *dst = (char*)m->base + dst_addr;
 	char *key = (char*)m->base + key_addr;
 	
-	ST_STORAGE_API *api = conn->server->api;
+	ST_STORAGE_API *api = CONFIG(conn)->api;
 	return( api->get(api->storage_data, dst, dst_sz, key, key_sz) );
 }
 
 int syscall_st_prefetch(CONN *conn, struct process *process, vxproc *proc, vxmmap *m, int *syscall_ret) {
-	ST_STORAGE_API *api = conn->server->api;
+	ST_STORAGE_API *api = CONFIG(conn)->api;
 	uint32_t arg1 = proc->cpu->reg[EDX];
 	uint32_t arg2 = proc->cpu->reg[ECX];
 	uint32_t arg3 = proc->cpu->reg[EBX];
@@ -389,7 +389,7 @@ int syscall_st_set(CONN *conn, struct process *process, vxproc *proc, vxmmap *m,
 	char *value = (char*)m->base + value_addr;
 	char *key = (char*)m->base + key_addr;
 
-	ST_STORAGE_API *api = conn->server->api;
+	ST_STORAGE_API *api = CONFIG(conn)->api;
 	return( api->set(api->storage_data, value, value_sz, key, key_sz) );
 }
 
@@ -405,7 +405,7 @@ int syscall_st_del(CONN *conn, struct process *process, vxproc *proc, vxmmap *m,
 	
 	char *key = (char*)m->base + key_addr;
 	
-	ST_STORAGE_API *api = conn->server->api;
+	ST_STORAGE_API *api = CONFIG(conn)->api;
 	return( api->del(api->storage_data, key, key_sz) );
 }
 
@@ -502,7 +502,7 @@ int process_run(CONN *conn, struct process *process) {
 	// Simple execution loop.
 	int irq_counter = 0;
 	int syscall_counter = 0;
-	int syscall_limit = conn ? conn->server->syscall_limit * conn->requests +128 : INT_MAX;
+	int syscall_limit = conn ? CONFIG(conn)->syscall_limit * conn->requests +128 : INT_MAX;
 	for (;;) {
 	loop_again:;
 		int rc = vxproc_run(process->p);
@@ -517,7 +517,7 @@ int process_run(CONN *conn, struct process *process) {
 			case SYSCALLRET_CONTINUE:
 				goto loop_again;
 			case SYSCALLRET_YIELD:
-				if(conn && conn->server->trace)
+				if(conn && CONFIG(conn)->trace)
 					log_warn("#%p do yield", process);
 				return(0);
 			case SYSCALLRET_KILL:

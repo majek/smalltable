@@ -1,5 +1,5 @@
-#ifndef _ROUTER_H
-#define _ROUTER_H
+#ifndef _ST_H
+#define _ST_H
 
 #include <sys/types.h>
 #include <event.h>
@@ -13,6 +13,7 @@ typedef void (*ev_callback_t)(int,short,void*);
 #define VERSION_STRING "smalltable-0.0.1"
 
 struct server;
+struct config;
 
 #include "common.h"
 #include "buffer.h"
@@ -33,12 +34,20 @@ struct server;
 struct server {
 	int sd;
 	struct event ev;
-	char trace;
-	char ping_parent;
 
 	char *host;
 	int port;
 
+	char ping_parent;
+	
+	void (*info_handler)(void *userdata);
+	void (*quit_handler)(void *userdata);
+	int (*process_multi)(CONN *conn, char *requests, int requests_sz);
+	void *userdata;
+};
+
+struct config {
+	char trace;
 	ST_STORAGE_API *api;
 	
 	char *tmpdir;
@@ -48,6 +57,7 @@ struct server {
 	char *vx32sdk_path;
 };
 
+#define CONFIG(conn) ((struct config*)(conn)->server->userdata)
 
 
-#endif //_ROUTER_H
+#endif //_ST_H

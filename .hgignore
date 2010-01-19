@@ -1,8 +1,14 @@
+server/vx32/src/libvx32/asm-sym.s
+server/untrusted
+server/vx32/src/.deps
+server/vx32/src/libvx32/asm.h
+server/vx32/src/libvx32/libvx32.a
+
 syntax: glob
+*.d
 *.pyc
 *.o
 *.gcda
 *.gcno
 *.gcov
-server/vx32/src/libvx32/asm-sym.s
 

@@ -20,5 +20,5 @@ struct meta_event {
 void modify_event(struct meta_event *me, int action);
 void client_callback(int cd, short event, void *udata);
 
-void do_event_loop(char *host, int port, struct server *server);
+void do_event_loop(struct server *server);
 

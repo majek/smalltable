@@ -37,7 +37,7 @@ static int process_single(CONN *conn, char *request, int request_sz,
 	} else {
 		// normal system command - API
 		system_cmd_t fun = (system_cmd_t)cmd_ptr;
-		fun(conn->server->api, &req, &res);
+		fun(CONFIG(conn)->api, &req, &res);
 	}
 exit:;
 	return( pack_response(res_buf, res_buf_sz, &res) );

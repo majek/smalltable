@@ -15,15 +15,11 @@ char *default_vx32sdk_gcc_command[] = {
 	" -nostdlib -mfp-ret-in-387 $P/crt0.o -o %s %s ",
 	" -I$P/include -L$P -lst -lc -lgcc >%s 2>&1"};
 
-
-
 struct storage_engines{
 	char *name;
 	storage_engine_create *create;
 	storage_engine_destroy *destroy;
 };
-
-
 
 struct storage_engines engines[] = {
 	{"fs", &storage_fs_create, &storage_fs_destroy},
@@ -73,7 +69,24 @@ char *flatten_engine_names() {
 	return flatten_argv(NELEM(engines), names, ", ");
 }
 
-void print_help(struct server *server) {
+void info_handler(void *arg) {
+	struct config *config = (struct config*)arg;
+	storage_sync(config->api);
+}
+
+void quit_handler(void *arg) {
+	struct config *config = (struct config*)arg;
+	log_info("Received signal, syncing database.");
+	storage_sync(config->api);
+	log_info("Synced.");
+	int pool_items, pool_bytes;
+	get_pool_size(&pool_items, &pool_bytes);
+	log_info("Memory stats: %iMB in %i items in pool. Pool freed.",
+				pool_bytes/1024/1024, pool_items);
+	pool_free();
+}
+
+void print_help(struct server *server, struct config *config) {
 printf(
 "Usage: smalltable [OPTION]... -- [ENGINE PARAMETERS]...\n"
 VERSION_STRING " - a light and fast key-value server\n"
@@ -112,8 +125,8 @@ VERSION_STRING " - a light and fast key-value server\n"
 	flatten_engine_names(),
 	server->host,
 	server->port,
-	server->vx32sdk_path,
-	server->tmpdir,
+	config->vx32sdk_path,
+	config->tmpdir,
 	flatten_argv_ext(NELEM(default_vx32sdk_gcc_command), default_vx32sdk_gcc_command, "\t\t\t\t", "\t\\\n")
 );
 }
@@ -133,24 +146,30 @@ int main(int argc, char *argv[]) {
 	};
 	
 	struct server *server = (struct server*)st_calloc(1, sizeof(struct server));
-
+	server->info_handler = &info_handler;
+	server->quit_handler = &quit_handler;
+	server->process_multi= &process_multi;
+	
 	server->host = "127.0.0.1";
 	server->port = 22122;
-	server->tmpdir = "/tmp";
-	server->vx32sdk_path = "./untrusted/";
-	server->vx32sdk_gcc_command = strdup(flatten_argv(NELEM(default_vx32sdk_gcc_command), default_vx32sdk_gcc_command, " "));
-	server->syscall_limit = 4; /* 4 syscalls per request allowed */
+	
+	struct config *config = (struct config*)st_calloc(1, sizeof(struct config));
+	server->userdata = config;
+	config->tmpdir = "/tmp";
+	config->vx32sdk_path = "./untrusted/";
+	config->vx32sdk_gcc_command = strdup(flatten_argv(NELEM(default_vx32sdk_gcc_command), default_vx32sdk_gcc_command, " "));
+	config->syscall_limit = 4; /* 4 syscalls per request allowed */
 	int option_index;
 	int arg;
 	char *engine_name = NULL;
 	while((arg = getopt_long_only(argc, argv, "hxvl:p:g:s:t:e:", long_options, &option_index)) != EOF) {
 		switch(arg) {
 		case 'h':
-			print_help(server);
+			print_help(server, config);
 			exit(-1);
 			break;
 		case 'v':
-			server->trace = 1;
+			config->trace = 1;
 			break;
 		case 'x':
 			server->ping_parent = 1;
@@ -164,13 +183,13 @@ int main(int argc, char *argv[]) {
 				fatal("Port number broken: %i", server->port);
 			break;
 		case 'g':
-			server->vx32sdk_gcc_command = optarg;
+			config->vx32sdk_gcc_command = optarg;
 			break;
 		case 's':
-			server->vx32sdk_path = optarg;
+			config->vx32sdk_path = optarg;
 			break;
 		case 't':
-			server->tmpdir = optarg;
+			config->tmpdir = optarg;
 			break;
 		case 'e':
 			engine_name = optarg;
@@ -198,13 +217,13 @@ int main(int argc, char *argv[]) {
 	signal(SIGPIPE, SIG_IGN);
 	
 	commands_initialize();
-	process_initialize(server);
+	process_initialize(config);
 	char *params = flatten_argv(argc-optind, &argv[optind], ", ");
 	log_info("Loading database engine \"%s\" with parameters \"%s\"", engine_name, params);
 	
-	server->api = engine_create(argc-optind, &argv[optind]);
+	config->api = engine_create(argc-optind, &argv[optind]);
 	
-	do_event_loop(server->host, server->port, server);
+	do_event_loop(server);
 	
 	log_info("Quit");
 	process_destroy();

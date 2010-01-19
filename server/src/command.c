@@ -118,7 +118,7 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 	   the end of the read data. */
 	buf_get_writer(&conn->recv_buf, NULL, NULL, sizeof(MC_METADATA) );
 
-	try_prefetch(conn->server->api, start_req_buf, start_req_buf_sz);
+	try_prefetch(CONFIG(conn)->api, start_req_buf, start_req_buf_sz);
 	
 	char *req_buf = start_req_buf;
 	int req_buf_sz = start_req_buf_sz;
@@ -137,7 +137,7 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 		void *ptr = cmd_pointers[cmd].ptr;
 		int flags = cmd_pointers[cmd].flags;
 		if(group_ptr == ptr && group_flags == flags) { /* swallow */
-			if(NEVER(conn->server->trace))
+			if(NEVER(CONFIG(conn)->trace))
 				log_info("%s:%i             cmd=0x%02x(%i)", conn->host, conn->port, cmd, cmd);
 			// pass;
 		} else {
@@ -147,7 +147,7 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 					group_req_buf, group_req_buf_sz,
 					&conn->send_buf, group_flags, group_ptr);
 			}
-			if(NEVER(conn->server->trace))
+			if(NEVER(CONFIG(conn)->trace))
 				log_info("%s:%i flags=0x%x(%i) ptr=%p cmd=0x%02x(%i)", conn->host, conn->port, flags, flags, ptr, cmd, cmd);
 			group_req_buf = req_buf;
 			group_req_buf_sz = 0;

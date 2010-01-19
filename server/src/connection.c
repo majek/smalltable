@@ -45,7 +45,7 @@ void conn_close(CONN *conn) {
 
 /* Read data from socket, run process_multi() once enough data is collected. */
 void conn_recv(CONN *conn) {
-	if(NEVER(unlikely(conn->server->trace)))
+	if(NEVER(unlikely(CONFIG(conn)->trace)))
 		log_debug("%s:%i event:recv", conn->host, conn->port);
 retry_recv:;
 	char *buf;
@@ -107,7 +107,7 @@ swallow_next_request:;
 			conn->requests++;
 			
 			int consumed = \
-				process_multi(conn, data, conn->quiet_recv_off);
+				conn->server->process_multi(conn, data, conn->quiet_recv_off);
 			
 			buf_consume(&conn->recv_buf, consumed);
 			/* We can assume that there's data to be written. */
@@ -126,7 +126,7 @@ swallow_next_request:;
 }
 
 void conn_send(CONN *conn) {
-	if(NEVER(unlikely(conn->server->trace)))
+	if(NEVER(unlikely(CONFIG(conn)->trace)))
 		log_debug("%s:%i event:send", conn->host, conn->port);
 	char *buf;
 	int buf_sz = 0;

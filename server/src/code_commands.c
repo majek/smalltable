@@ -26,7 +26,7 @@ struct process *find_process(char *key, int key_sz) {
 	return(NULL);
 }
 
-int process_compile(struct server *server, char *c_file, char *elf_file, char *dst, int dst_sz, int *produced_ptr) {
+int process_compile(struct config *config, char *c_file, char *elf_file, char *dst, int dst_sz, int *produced_ptr) {
 	int produced = 0;
 	char log_file[1024];
 	snprintf(log_file, sizeof(log_file), "%s.log", elf_file);
@@ -34,8 +34,8 @@ int process_compile(struct server *server, char *c_file, char *elf_file, char *d
 	unlink(elf_file);
 	char cmd[4096];
 	snprintf(cmd, sizeof(cmd),
-			server->vx32sdk_gcc_command,
-			server->vx32sdk_path, elf_file, c_file, log_file);
+			config->vx32sdk_gcc_command,
+			config->vx32sdk_path, elf_file, c_file, log_file);
 	int r = system(cmd);
 	
 	produced += snprintf(dst+produced, dst_sz-produced, "%s\n\n",cmd);
@@ -70,12 +70,12 @@ int write_file(char *fname, char *value, int value_sz) {
 	return(0);
 }
 
-int process_test_str(struct server *server, char *value, int value_sz, char *keyprefix) {
+int process_test_str(struct config *config, char *value, int value_sz, char *keyprefix) {
 	int r;
 	char c_file[1024];
 	char elf_file[1024];
-	snprintf(c_file, sizeof(c_file), "%s/plugin-%s.c", server->tmpdir, keyprefix);
-	snprintf(elf_file, sizeof(elf_file), "%s/plugin-%s.elf", server->tmpdir, keyprefix);
+	snprintf(c_file, sizeof(c_file), "%s/plugin-%s.c", config->tmpdir, keyprefix);
+	snprintf(elf_file, sizeof(elf_file), "%s/plugin-%s.elf", config->tmpdir, keyprefix);
 
 	if(0 != write_file(c_file, value, value_sz)) {
 		log_perror("write()");
@@ -83,7 +83,7 @@ int process_test_str(struct server *server, char *value, int value_sz, char *key
 	}
 	char warn_buf[4096];
 	int warn_buf_sz = 0;
-	if(0 != process_compile(server, c_file, elf_file, warn_buf, sizeof(warn_buf), &warn_buf_sz)) {
+	if(0 != process_compile(config, c_file, elf_file, warn_buf, sizeof(warn_buf), &warn_buf_sz)) {
 		warn_buf[MAX(1, warn_buf_sz)-1] = '\0';
 		log_error("compilation failed:\n%s", warn_buf);
 		return(-1);
@@ -124,8 +124,8 @@ ST_RES *cmd_code_load(CONN *conn, ST_REQ *req, ST_RES *res) {
 	char keyprefix[32];
 	key_escape(keyprefix, sizeof(keyprefix), req->key, req->key_sz);
 	keyprefix[MIN(req->key_sz, sizeof(keyprefix)-1)] = '\0'; // make it reasonably short
-	snprintf(c_file, sizeof(c_file), "%s/plugin-%s.c", conn->server->tmpdir, keyprefix);
-	snprintf(elf_file, sizeof(elf_file), "%s/plugin-%s.elf", conn->server->tmpdir, keyprefix);
+	snprintf(c_file, sizeof(c_file), "%s/plugin-%s.c", CONFIG(conn)->tmpdir, keyprefix);
+	snprintf(elf_file, sizeof(elf_file), "%s/plugin-%s.elf", CONFIG(conn)->tmpdir, keyprefix);
 	
 	res->value = res->buf;
 	
@@ -136,7 +136,7 @@ ST_RES *cmd_code_load(CONN *conn, ST_REQ *req, ST_RES *res) {
 		return(res);
 	}
 	
-	if(0 != process_compile(conn->server, c_file, elf_file, res->value, res->buf_sz, (int*)&res->value_sz)) {
+	if(0 != process_compile(CONFIG(conn), c_file, elf_file, res->value, res->buf_sz, (int*)&res->value_sz)) {
 		res->status = MEMCACHE_STATUS_ITEM_NOT_STORED;
 		return(res);
 	}

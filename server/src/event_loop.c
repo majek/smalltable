@@ -95,12 +95,11 @@ static void server_callback(int sd, short event, void *sdata) {
 	conn_new(cd, host, port, server);
 }
 
-static struct server *server_bind(char *host, int port, ev_callback_t handler, struct server *server) {
-	log_info("Binding to %s:%i", host, port);
-	int sd = net_bind(host, port);
-	if(sd < 0) {
+static struct server *server_bind(struct server *server, ev_callback_t handler) {
+	log_info("Binding to %s:%i", server->host, server->port);
+	int sd = net_bind(server->host, server->port);
+	if(sd < 0)
 		return(NULL);
-	}
 	
 	server->sd = sd;
 	
@@ -110,24 +109,18 @@ static struct server *server_bind(char *host, int port, ev_callback_t handler, s
 	return(server);
 }
 
-
-static void signal_int(int fd, short event, void *arg) {
+static void signal_quit(int fd, short event, void *arg) {
 	struct server *server = (struct server *)arg;
 	log_info("Received CTRL+C, closing");
-	storage_sync(server->api);
+	if(server->quit_handler)
+		server->quit_handler(server->userdata);
 	event_loopexit(NULL);
 }
 
-static void signal_sync(int fd, short event, void *arg) {
+static void signal_info(int fd, short event, void *arg) {
 	struct server *server = (struct server *)arg;
-	log_info("Received signal, syncing database.");
-	storage_sync(server->api);
-	log_info("Synced.");
-	int pool_items, pool_bytes;
-	get_pool_size(&pool_items, &pool_bytes);
-	log_info("Memory stats: %iMB in %i items in pool. Pool freed.",
-				pool_bytes/1024/1024, pool_items);
-	pool_free();
+	if(server->info_handler)
+		server->info_handler(server->userdata);
 }
 
 static struct event *catch_signal(int sig_no, ev_callback_t handler, struct server *server) {
@@ -140,33 +133,32 @@ static struct event *catch_signal(int sig_no, ev_callback_t handler, struct serv
 }
 
 static void ev_close(struct event *ev, int fd) {
-	if(ev) {
+	if(ev)
 		event_del(ev);
-	}
-	if(fd > 0)
+	if(fd >= 0)
 		close(fd);
 }
 
-void do_event_loop(char *host, int port, struct server *server) {
+void do_event_loop(struct server *server) {
 	struct server *srv;
 	struct event *sigev[5];
 	log_info("Libevent version: %s", event_get_version());
 	event_init();
 
-	sigev[0] = catch_signal(SIGINT,  &signal_int, server);
-	sigev[1] = catch_signal(SIGTERM, &signal_int, server);
-	sigev[2] = catch_signal(SIGHUP, &signal_sync, server);
-	sigev[3] = catch_signal(SIGUSR1, &signal_sync, server);
-	sigev[4] = catch_signal(SIGUSR2, &signal_sync, server);
+	sigev[0] = catch_signal(SIGINT,  &signal_quit, server);
+	sigev[1] = catch_signal(SIGTERM, &signal_quit, server);
+	sigev[2] = catch_signal(SIGHUP,  &signal_info, server);
+	sigev[3] = catch_signal(SIGUSR1, &signal_info, server);
+	sigev[4] = catch_signal(SIGUSR2, &signal_info, server);
 
 
-	srv = server_bind(host, port, server_callback, server);
+	srv = server_bind(server, server_callback);
 	if(server->ping_parent) {
 		kill(getppid(), SIGURG);
 	}
 
 	if(!srv) {
-		log_perror("Can't bind to socket %s:%i", host, port);
+		log_perror("Can't bind to socket %s:%i", server->host, server->port);
 	} else {
 		int r = event_dispatch();
 		if(NEVER(r != 0))
