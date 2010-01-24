@@ -25,7 +25,6 @@ int process_bytestream(char *request, int request_sz, char *res_buf, int res_buf
 	res.value = res.buf;
 	res.value_sz = snprintf(res.value, res.buf_sz, "kalesony!");
 	
-	
 exit:;
 	return( pack_response(res_buf, res_buf_sz, &res) );
 }

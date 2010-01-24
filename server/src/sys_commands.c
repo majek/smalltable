@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+
+#include "shared.h"
 #include "st.h"
 
 typedef ST_RES* (*system_cmd_t)(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res);
@@ -71,32 +73,6 @@ void builtin_commands_callback(CONN *conn, char *req_buf, int req_buf_sz,
 		buf_produce(send_buf, produced);
 		req_buf += request_sz;
 	}
-}
-
-
-static char *error_codes[] = {
-	[MEMCACHE_STATUS_KEY_NOT_FOUND]		"Key not found",
-	[MEMCACHE_STATUS_KEY_EXISTS]		"Key exists",
-	[MEMCACHE_STATUS_VALUE_TOO_BIG]		"Value too big",
-	[MEMCACHE_STATUS_INVALID_ARGUMENTS]	"Invalid arguments",
-	[MEMCACHE_STATUS_ITEM_NOT_STORED]	"Item not stored",
-	[MEMCACHE_STATUS_UNKNOWN_COMMAND]	"Unknown command"
-};
-
-ST_RES *set_error_code(ST_RES *res, unsigned char status) {
-	res->extras_sz = 0;
-	res->key_sz = 0;
-	res->cas = 0;
-
-	char *error_str = "Unknown error code";
-	if(status >= 0 && status< NELEM(error_codes))
-		error_str = error_codes[status];
-	
-	res->status = status;
-	res->value = res->buf;
-	res->value_sz = MIN(strlen(error_str), res->buf_sz);
-	memcpy(res->value, error_str, res->value_sz);
-	return(res);
 }
 
 ST_RES *cmd_unknown(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {

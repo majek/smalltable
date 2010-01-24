@@ -4,7 +4,9 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <unistd.h>
-#include "st.h"
+
+#include "shared.h"
+
 
 CONN *conn_new(int cd, char *host, int port, struct server *server) {
 	log_info("%s:%i opened", host, port);
@@ -45,7 +47,7 @@ void conn_close(CONN *conn) {
 
 /* Read data from socket, run process_multi() once enough data is collected. */
 void conn_recv(CONN *conn) {
-	if(NEVER(unlikely(CONFIG(conn)->trace)))
+	if(NEVER(unlikely(conn->server->trace)))
 		log_debug("%s:%i event:recv", conn->host, conn->port);
 retry_recv:;
 	char *buf;
@@ -97,8 +99,10 @@ swallow_next_request:;
 		}
 		return;
 	default:
-		/* enough, and proper data */
-		if(cmd_check(MC_GET_OPCODE(new_data), CMD_FLAG_QUIET) && data_sz < MAX_REQUEST_SIZE) {
+		/* enough data, and quiet commands */
+		if( (MC_GET_RESERVED(new_data) & MEMCACHE_RESERVED_FLAG_QUIET)
+					&& data_sz < MAX_REQUEST_SIZE
+					&& conn->requests < MAX_QUIET_REQUESTS) {
 			conn->quiet_recv_off += request_sz;
 			conn->requests++;
 			goto swallow_next_request;
@@ -126,7 +130,7 @@ swallow_next_request:;
 }
 
 void conn_send(CONN *conn) {
-	if(NEVER(unlikely(CONFIG(conn)->trace)))
+	if(NEVER(unlikely(conn->server->trace)))
 		log_debug("%s:%i event:send", conn->host, conn->port);
 	char *buf;
 	int buf_sz = 0;

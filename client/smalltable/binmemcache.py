@@ -35,6 +35,9 @@ STATUS_ITEM_NOT_STORED=0x0005
 STATUS_UNKNOWN_COMMAND=0x0081
 STATUS_OUT_OF_MEMORY=0x0082
 
+RESERVED_FLAG_QUIET  = 1 << 0
+
+
 
 class MemcachedError(Exception):
     def __init__(self, opcode=None, status=None, value=None):
@@ -93,11 +96,11 @@ OP_INCREMENT=0x05
 OP_DECREMENT=0x06
 OP_QUIT=0x07
 OP_FLUSH=0x08
-OP_GETQ=0x09        # not implemented
+#OP_GETQ=0x09        # not implemented
 OP_NOOP=0x0A
 OP_VERSION=0x0B
 OP_GETK=0x0C        # not implemented
-OP_GETKQ=0x0D       # not implemented
+#OP_GETKQ=0x0D       # not implemented
 OP_APPEND=0x0E
 OP_PREPEND=0x0F
 OP_STAT=0x10

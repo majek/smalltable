@@ -8,7 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "st.h"
+#include "shared.h"
+#include "storage.h"
 
 int dumb_get(void *storage_data, char *dst, int size, char *key, int key_sz){
 	return(-1);

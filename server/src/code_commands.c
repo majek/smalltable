@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "shared.h"
 #include "st.h"
 #include "process.h"
 

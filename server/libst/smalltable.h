@@ -47,7 +47,6 @@ enum {
 };
 
 enum {
-	CMD_FLAG_QUIET		= 1 << 1,	// don't answer immedietally
 	CMD_FLAG_PREFETCH	= 1 << 2	// automatically prefetch given key
 };
 

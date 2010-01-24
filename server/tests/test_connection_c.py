@@ -3,7 +3,7 @@ import struct
 import socket
 from utils import connect
 
-from smalltable.binmemcache import OP_SET, OP_GET, OP_GETQ, OP_NOOP, MemcachedInvalidArguments
+from smalltable.binmemcache import OP_SET, OP_GET, OP_NOOP, RESERVED_FLAG_QUIET, MemcachedInvalidArguments
 
 class TestConnection(unittest.TestCase):
     @connect
@@ -51,8 +51,8 @@ class TestConnection(unittest.TestCase):
         sd.setblocking(False)
 
         header = struct.pack('!BBHBBHIIQ',
-            0x80, OP_GETQ, len(key),
-            0, 0x00, 0x00,
+            0x80, OP_GET, len(key),
+            0, 0x00, RESERVED_FLAG_QUIET,
             len(key),
             0xDEAD,
             0x00)
@@ -71,7 +71,7 @@ class TestConnection(unittest.TestCase):
         sd.send(header)
         sd.setblocking(True)
         r = sd.recv(4096)
-        self.assertEqual( r.encode('hex'), '8109000004000000000000050000dead000000000000000100000002618109000004000000000000050000dead00000000000000010000000261810a000000000000000000000000dead0000000000000000')
+        self.assertEqual( r.encode('hex'), '8100000004000000000000050000dead000000000000000100000002618100000004000000000000050000dead00000000000000010000000261810a000000000000000000000000dead0000000000000000')
 
 
     @connect

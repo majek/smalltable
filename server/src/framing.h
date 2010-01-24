@@ -21,11 +21,13 @@ struct memcache_header{
 	uint32_t opaque;
 	uint64_t cas;
 };
-#define MC_GET_BODY_LENGTH(buf)		(ntohl(((struct memcache_header *)buf)->body_length))
-#define MC_GET_EXTRAS_LENGTH(buf)	      (((struct memcache_header *)buf)->extras_length)
-#define MC_GET_KEY_LENGTH(buf)		(ntohs(((struct memcache_header *)buf)->key_length))
-#define MC_GET_MAGIC(buf)		      (((struct memcache_header *)buf)->magic)
-#define MC_GET_OPCODE(buf)		      (((struct memcache_header *)buf)->opcode)
+#define MC_GET_BODY_LENGTH(buf)		(ntohl(((struct memcache_header *)(buf))->body_length))
+#define MC_GET_EXTRAS_LENGTH(buf)	      (((struct memcache_header *)(buf))->extras_length)
+#define MC_GET_KEY_LENGTH(buf)		(ntohs(((struct memcache_header *)(buf))->key_length))
+#define MC_GET_MAGIC(buf)		      (((struct memcache_header *)(buf))->magic)
+#define MC_GET_OPCODE(buf)		      (((struct memcache_header *)(buf))->opcode)
+#define MC_GET_STATUS(buf)		(ntohs(((struct memcache_header *)(buf))->status))
+#define MC_GET_RESERVED(buf)		MC_GET_STATUS(buf)
 
 #define MC_GET_REQUEST_SZ(buf)	\
 	(MEMCACHE_HEADER_SIZE + MC_GET_BODY_LENGTH(buf))
@@ -66,6 +68,7 @@ int pack_response(char *buf, int buf_sz, ST_RES *res);
 
 int reqbuf_get_sane_request_sz(char *buf, int buf_sz);
 int error_from_reqbuf(char *request, int request_sz, char *res_buf, int res_buf_sz, int status);
+ST_RES *set_error_code(ST_RES *res, unsigned char status);
 
 
 #endif // _FRAMING_H

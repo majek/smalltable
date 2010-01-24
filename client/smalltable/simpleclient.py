@@ -59,24 +59,24 @@ OP_INCREMENT = 0x05
 OP_DECREMENT = 0x06
 OP_QUIT = 0x07
 OP_FLUSH = 0x08
-OP_GETQ = 0x09
+#OP_GETQ = 0x09
 OP_NOOP = 0x0A
 OP_VERSION = 0x0B
 OP_GETK = 0x0C
-OP_GETKQ = 0x0D
+#OP_GETKQ = 0x0D
 OP_APPEND = 0x0E
 OP_PREPEND = 0x0F
 OP_STAT = 0x10
-OP_SETQ = 0x11
-OP_ADDQ = 0x12
-OP_REPLACEQ = 0x13
-OP_DELETEQ = 0x14
-OP_INCREMENTQ = 0x15
-OP_DECREMENTQ = 0x16
-OP_QUITQ = 0x17       # you have to be fucked up to think of QUITQ
-OP_FLUSHQ = 0x18
-OP_APPENDQ = 0x19
-OP_PREPENDQ = 0x1A
+#OP_SETQ = 0x11
+#OP_ADDQ = 0x12
+#OP_REPLACEQ = 0x13
+#OP_DELETEQ = 0x14
+#OP_INCREMENTQ = 0x15
+#OP_DECREMENTQ = 0x16
+#OP_QUITQ = 0x17       # you have to be fucked up to think of QUITQ
+#OP_FLUSHQ = 0x18
+#OP_APPENDQ = 0x19
+#OP_PREPENDQ = 0x1A
 
 OP_CODE_LOAD = 0x70
 OP_CODE_UNLOAD = 0x71
@@ -93,6 +93,9 @@ STATUS_ITEM_NON_NUMERIC = 0x0006
 
 STATUS_UNKNOWN_COMMAND = 0x0081
 STATUS_OUT_OF_MEMORY = 0x0082
+
+RESERVED_FLAG_QUIET  = 1 << 0
+
 
 class MemcachedError(Exception):
     def __init__(self, *args, **kwargs):
@@ -264,8 +267,9 @@ class NetworkConnecton:
 
     def send_with_noop(self, requests_iter):
         def x(opaque):
-            for opcode, key, extras, value in requests_iter:
-                yield _pack(opcode, key, extras, value, opaque=opaque)
+            for kwargs in requests_iter:
+                kwargs['opaque'] = opaque
+                yield _pack(**kwargs)
                 opaque += 1
             yield _pack(opcode=OP_NOOP, opaque=opaque)
         self.send_iter = x
@@ -278,9 +282,10 @@ class NetworkConnecton:
         assert len(self.send_buffer) == 0
         assert len(self.recv_buffer) == 0
 
-    def single_cmd(self, opcode, key, extras, value):
+    def single_cmd(self, **kwargs):
         def x(opaque):
-            yield _pack(opcode, key, extras, value, opaque=opaque)
+            kwargs['opaque'] = opaque
+            yield _pack(**kwargs)
             opaque += 1
         self.send_iter = x
         ret = list( self.recv() )[0]
@@ -350,7 +355,7 @@ class Client:
         self.conn = NetworkConnecton( server_addr )
 
     def get_multi(self, keys, default=None):
-        self.conn.send_with_noop( (OP_GETQ, key, '', '') for key in keys )
+        self.conn.send_with_noop( {'opcode':OP_GET, 'key':key, 'reserved':RESERVED_FLAG_QUIET} ) for key in keys )
         key_map = {}
         for i, (r_status, r_cas, r_extras, r_key, r_value) in enumerate(self.conn.recv_till_noop()):
             if r_status is STATUS_NO_ERROR:
@@ -366,7 +371,7 @@ class Client:
         items = key_map.items()
         def _req(key, value):
             enc_val, flags = _encode(value)
-            return (OP_SET, key, struct.pack('!II', flags, 0x0), enc_val)
+            return {'opcode':OP_SET, 'key':key, 'extras': struct.pack('!II', flags, 0x0), 'value':enc_val, 'reserved':RESERVED_FLAG_QUIET}
         self.conn.send_with_noop( _req(key, value) for key, value in items )
         for i, (r_status, r_cas, r_extras, r_key, r_value) in enumerate(self.conn.recv_till_noop()):
             if r_status is not STATUS_NO_ERROR:
@@ -374,7 +379,7 @@ class Client:
         return True
 
     def delete_multi(self, keys):
-        self.conn.send_with_noop( (OP_DELETE, key, '', '') for key in keys )
+        self.conn.send_with_noop( {'opcode':OP_DELETE, 'key':key} for key in keys )
         for i, (r_status, r_cas, r_extras, r_key, r_value) in enumerate(self.conn.recv_till_noop()):
             if r_status is not STATUS_NO_ERROR and r_status is not STATUS_KEY_NOT_FOUND:
                 raise status_exceptions[r_status](key=keys[i])
@@ -393,7 +398,7 @@ class Client:
         if key is None:
             key = do_md5(code)
         r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
-                            self.conn.single_cmd(OP_CODE_LOAD, key, '', code)
+                            self.conn.single_cmd(opcode=OP_CODE_LOAD, key=key, value=code)
         if r_status is not STATUS_NO_ERROR and r_status is not STATUS_KEY_EXISTS:
             raise status_exceptions[r_status](key=r_key, value=r_value)
         return True
@@ -402,7 +407,7 @@ class Client:
         if key is None:
             key = do_md5(code)
         r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
-                            self.conn.single_cmd(OP_CODE_UNLOAD, key, '', '')
+                            self.conn.single_cmd(opcode=OP_CODE_UNLOAD, key=key)
         if r_status is not STATUS_NO_ERROR:
             raise status_exceptions[r_status](key=key, value=r_value)
         return True
@@ -411,7 +416,7 @@ class Client:
         if key is None:
             key = do_md5(code)
         r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
-                            self.conn.single_cmd(OP_CODE_CHECK, key, '', '')
+                            self.conn.single_cmd(opcode=OP_CODE_CHECK, key=key)
         if r_status is not STATUS_KEY_FOUND:
             return True
         elif r_status is not STATUS_KEY_NOT_FOUND:
@@ -437,7 +442,7 @@ class IncrClient(Client):
     def _do_incr(self, opcode, key, amount, initial, expiration):
         extras = struct.pack("!QQI", amount, initial, expiration)
         r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
-                            self.conn.single_cmd(opcode, key, extras, '')
+                            self.conn.single_cmd(opcode=opcode, key=key, extras=extras)
         if r_status is not STATUS_NO_ERROR:
             raise status_exceptions[r_status](key=key)
         return struct.unpack('!Q', r_value)[0]

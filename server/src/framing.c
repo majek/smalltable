@@ -2,7 +2,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 
-#include "st.h"
+#include "shared.h"
 
 int unpack_request(ST_REQ *req, char *buf, int buf_sz) {
 	struct memcache_header *header = (struct memcache_header *)buf;
@@ -124,3 +124,27 @@ int error_from_reqbuf(char *request, int request_sz, char *res_buf, int res_buf_
 }
 
 
+static char *error_codes[] = {
+	[MEMCACHE_STATUS_KEY_NOT_FOUND]		"Key not found",
+	[MEMCACHE_STATUS_KEY_EXISTS]		"Key exists",
+	[MEMCACHE_STATUS_VALUE_TOO_BIG]		"Value too big",
+	[MEMCACHE_STATUS_INVALID_ARGUMENTS]	"Invalid arguments",
+	[MEMCACHE_STATUS_ITEM_NOT_STORED]	"Item not stored",
+	[MEMCACHE_STATUS_UNKNOWN_COMMAND]	"Unknown command"
+};
+
+ST_RES *set_error_code(ST_RES *res, unsigned char status) {
+	res->extras_sz = 0;
+	res->key_sz = 0;
+	res->cas = 0;
+
+	char *error_str = "Unknown error code";
+	if(status >= 0 && status< NELEM(error_codes))
+		error_str = error_codes[status];
+	
+	res->status = status;
+	res->value = res->buf;
+	res->value_sz = MIN(strlen(error_str), res->buf_sz);
+	memcpy(res->value, error_str, res->value_sz);
+	return(res);
+}

@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include "st.h"
+#include "shared.h"
 
 #define EVENT_MAX_TIMEOUT {0x0FFFFFFF, 0}
 static void meta_event_add(struct meta_event *me) { /* Edge driven. */

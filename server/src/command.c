@@ -6,6 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "shared.h"
 #include "st.h"
 
 #if __LP64__ == 1
@@ -24,7 +25,6 @@ u_int64_t unique_number;
 
 struct cmd_pointers cmd_pointers[256] = {
 	SYSTEM_CMD(MEMCACHE_CMD_GET, &cmd_get, CMD_FLAG_PREFETCH),
-	SYSTEM_CMD(MEMCACHE_CMD_GETQ, &cmd_get, CMD_FLAG_PREFETCH | CMD_FLAG_QUIET),
 	SYSTEM_CMD(MEMCACHE_CMD_ADD, &cmd_set, CMD_FLAG_PREFETCH),
 	SYSTEM_CMD(MEMCACHE_CMD_SET, &cmd_set, 0),
 	SYSTEM_CMD(MEMCACHE_CMD_REPLACE, &cmd_set, CMD_FLAG_PREFETCH),
@@ -39,7 +39,7 @@ struct cmd_pointers cmd_pointers[256] = {
 int command_register(int cmd, int user_flags, void *process_ud) {
 	if(cmd < 0 || cmd > NELEM(cmd_pointers) || (cmd_pointers[cmd].flags & CMD_FLAG_RO))
 		return(-1);
-	int flags = CMD_FLAG_PROCESS | (user_flags & (CMD_FLAG_QUIET|CMD_FLAG_PREFETCH));
+	int flags = CMD_FLAG_PROCESS | (user_flags & (CMD_FLAG_PREFETCH));
 	cmd_pointers[cmd].ptr = process_ud;
 	cmd_pointers[cmd].flags = flags;
 	return(0);
@@ -137,7 +137,7 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 		void *ptr = cmd_pointers[cmd].ptr;
 		int flags = cmd_pointers[cmd].flags;
 		if(group_ptr == ptr && group_flags == flags) { /* swallow */
-			if(NEVER(CONFIG(conn)->trace))
+			if(NEVER(conn->server->trace))
 				log_info("%s:%i             cmd=0x%02x(%i)", conn->host, conn->port, cmd, cmd);
 			// pass;
 		} else {
@@ -147,7 +147,7 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 					group_req_buf, group_req_buf_sz,
 					&conn->send_buf, group_flags, group_ptr);
 			}
-			if(NEVER(CONFIG(conn)->trace))
+			if(NEVER(conn->server->trace))
 				log_info("%s:%i flags=0x%x(%i) ptr=%p cmd=0x%02x(%i)", conn->host, conn->port, flags, flags, ptr, cmd, cmd);
 			group_req_buf = req_buf;
 			group_req_buf_sz = 0;

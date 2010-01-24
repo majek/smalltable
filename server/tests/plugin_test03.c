@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 
 	static char req_buf[READ_REQUESTS_BUF_SZ];	// not on stack
 	static char res_buf[WRITE_RESPONSES_BUF_SZ];	// not on stack
-	st_register(MY_CMD, CMD_FLAG_QUIET);
+	st_register(MY_CMD, 0);
 	while(1) {
 		char *buf = req_buf;
 		int buf_sz = st_read_requests(req_buf, sizeof(req_buf));

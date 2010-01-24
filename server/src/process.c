@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#include "shared.h"
 #include "st.h"
 #include "process.h"
 
@@ -113,7 +114,7 @@ void process_commands_callback(CONN *conn, char *req_buf, int req_buf_sz, struct
 		log_warn("#%p no reposne given", process);
 		goto error;
 	}
-	if(conn && CONFIG(conn)->trace)
+	if(conn && conn->server->trace)
 		log_warn("#%p sending %i", process, process->send_sz);
 	return;
 	
@@ -223,7 +224,7 @@ int syscall_register(CONN *conn, struct process *process, vxproc *proc, vxmmap *
 	if(cmd < 0 || cmd > 255)
 		return(-1);
 	
-	flags &= (CMD_FLAG_QUIET|CMD_FLAG_PREFETCH);
+	flags &= (CMD_FLAG_PREFETCH);
 	
 	int xflags;
 	void *process_ud;
@@ -517,7 +518,7 @@ int process_run(CONN *conn, struct process *process) {
 			case SYSCALLRET_CONTINUE:
 				goto loop_again;
 			case SYSCALLRET_YIELD:
-				if(conn && CONFIG(conn)->trace)
+				if(conn && conn->server->trace)
 					log_warn("#%p do yield", process);
 				return(0);
 			case SYSCALLRET_KILL:

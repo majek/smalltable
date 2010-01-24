@@ -73,8 +73,12 @@ OBJS = 	src/buffer.o         src/command.o  src/connection.o   src/framing.o \
 	src/code_commands.o  src/common.o   src/event_loop.o   src/main.o \
 	src/sto_fs.o         src/sto_dumb.o
 	
+PROXY_OBJS = src/buffer.o   src/connection.o   src/framing.o src/network.o \
+	src/event_loop.o    src/proxy.o        src/common.o  src/rbtree.o \
+	src/proxy_config.o  src/st_server.o    src/st_proxy.o \
+	src/proxy_command.o
 
-CLEAN_FILES=$(OBJS) src/*gcov src/cov/*.gcno src/cov/*.gcda tests/*.pyc
+CLEAN_FILES=$(OBJS) $(PROXY_OBJS) src/*gcov src/cov/*.gcno src/cov/*.gcda tests/*.pyc
 
 
 main:	prerequisits
@@ -140,7 +144,7 @@ CLEAN_FILES+=src/deps.d
 %.o: src/deps.d
 
 src/deps.d:	$(wildcard src/*c)
-	$(CC) $(COPTS) -MM $^ | sed 's/^\([^:]*\):/src\/\1:/' > $@
+	@$(CC) $(COPTS) -MM $^ | sed 's/^\([^:]*\):/src\/\1:/' > $@
 
 -include src/deps.d
 
@@ -149,3 +153,12 @@ clean::
 	rm -f smalltable smalltable-cov smalltable-prof
 	rm -rf src/*.o src/cov/*.o src/prof/*.o
 	rm -f $(CLEAN_FILES)
+
+smalltable-proxy: $(PROXY_OBJS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDOPTS)
+
+smalltable-proxy-cov:: $(patsubst src/%, src/cov/%, $(PROXY_OBJS))
+	$(LD) $(LDFLAGS) $(LDFLAGS_COV) -o $@ $^ $(LDOPTS)
+
+smalltable-proxy-prof:: $(patsubst src/%, src/prof/%, $(PROXY_OBJS))
+	$(LD) $(LDFLAGS) $(LDFLAGS_PROF) -o $@ $^ $(LDOPTS)

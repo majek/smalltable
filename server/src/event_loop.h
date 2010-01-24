@@ -17,6 +17,23 @@ struct meta_event {
 	int flag_registered;
 };
 
+struct server {
+	int sd;
+	struct event ev;
+
+	char *host;
+	int port;
+
+	char ping_parent;
+	char trace;
+	
+	void (*info_handler)(void *userdata);
+	void (*quit_handler)(void *userdata);
+	int (*process_multi)(struct connection *conn, char *requests, int requests_sz);
+	void *userdata;
+};
+
+
 void modify_event(struct meta_event *me, int action);
 void client_callback(int cd, short event, void *udata);
 

@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include "shared.h"
 #include "st.h"
 
 extern char *optarg;
@@ -159,6 +160,7 @@ int main(int argc, char *argv[]) {
 	config->vx32sdk_path = "./untrusted/";
 	config->vx32sdk_gcc_command = strdup(flatten_argv(NELEM(default_vx32sdk_gcc_command), default_vx32sdk_gcc_command, " "));
 	config->syscall_limit = 4; /* 4 syscalls per request allowed */
+	
 	int option_index;
 	int arg;
 	char *engine_name = NULL;
@@ -169,7 +171,7 @@ int main(int argc, char *argv[]) {
 			exit(-1);
 			break;
 		case 'v':
-			config->trace = 1;
+			server->trace = 1;
 			break;
 		case 'x':
 			server->ping_parent = 1;
