@@ -94,8 +94,8 @@ STATUS_ITEM_NON_NUMERIC = 0x0006
 STATUS_UNKNOWN_COMMAND = 0x0081
 STATUS_OUT_OF_MEMORY = 0x0082
 
-RESERVED_FLAG_QUIET  = 1 << 0
-
+RESERVED_FLAG_QUIET = 1 << 0
+RESERVED_FLAG_PROXY_COMMAND = 1 << 1
 
 class MemcachedError(Exception):
     def __init__(self, *args, **kwargs):
@@ -155,13 +155,13 @@ status_exceptions = {
 }
 
 
-def _pack(opcode=0x0, key='', extras='', value='', opaque=0x0, cas=0x0):
+def _pack(opcode=0x0, key='', extras='', value='', opaque=0x0, cas=0x0, reserved=0x0):
     ''' create request packet '''
     keylen = len(key)
     extraslen = len(extras)
     header = struct.pack('!BBHBBHIIQ',
         0x80, opcode, keylen,
-        extraslen, 0x00, 0x0,
+        extraslen, 0x00, reserved,
         extraslen + keylen + len(value),
         opaque,
         cas)
@@ -326,6 +326,8 @@ class NetworkConnecton:
                 self.send_buffer.send_to_socket( self.sd )
             if rlist:
                 c = self.recv_buffer.recv_from_socket( self.sd )
+                if c == 0:
+                    raise ConnectionClosedError()
                 while True:
                     buf_len = len(self.recv_buffer)
                     if buf_len >= res_len:

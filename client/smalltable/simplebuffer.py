@@ -114,6 +114,7 @@ class SimpleBuffer:
         r = 524288
         s = 0
         while r == 524288:
+            data = ''
             try:
                 data = sd.recv(524288)
             except socket.error, (e, msg):
