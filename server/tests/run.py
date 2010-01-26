@@ -47,7 +47,7 @@ def get_module_names(module_name, directory, file_mask, skip_modules):
 
 
 if __name__ == '__main__':
-    test_module, test_dir = sys.argv[1:]
-    test_names   = get_module_names(test_module, test_dir, "test_*.py", [])
+    test_module, test_dir, test_mask = sys.argv[1:]
+    test_names   = get_module_names(test_module, test_dir, test_mask, [])
     #print test_names
     main_coverage(test_names)

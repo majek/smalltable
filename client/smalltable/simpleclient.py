@@ -355,7 +355,7 @@ class Client:
         self.conn = NetworkConnecton( server_addr )
 
     def get_multi(self, keys, default=None):
-        self.conn.send_with_noop( {'opcode':OP_GET, 'key':key, 'reserved':RESERVED_FLAG_QUIET} ) for key in keys )
+        self.conn.send_with_noop( {'opcode':OP_GET, 'key':key, 'reserved':RESERVED_FLAG_QUIET}  for key in keys )
         key_map = {}
         for i, (r_status, r_cas, r_extras, r_key, r_value) in enumerate(self.conn.recv_till_noop()):
             if r_status is STATUS_NO_ERROR:
@@ -422,6 +422,13 @@ class Client:
         elif r_status is not STATUS_KEY_NOT_FOUND:
             return False
         raise status_exceptions[r_status](key=key, value=r_value)
+
+    def _custom_command(self, **kwargs):
+        r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
+                            self.conn.single_cmd(**kwargs)
+        if r_status is not STATUS_NO_ERROR:
+            raise status_exceptions[r_status](value=r_value)
+        return r_value
 
 def code_loader(filename):
     def decor(fun):

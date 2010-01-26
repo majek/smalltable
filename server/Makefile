@@ -114,7 +114,7 @@ prerequisits:
 			exit 1;);	\
 	fi
 
-all: smalltable tests
+all: smalltable server_tests
 
 include Makevx32
 include Maketests
