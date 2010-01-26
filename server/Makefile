@@ -76,7 +76,7 @@ OBJS = 	src/buffer.o         src/command.o  src/connection.o   src/framing.o \
 PROXY_OBJS = src/buffer.o   src/connection.o   src/framing.o src/network.o \
 	src/event_loop.o    src/proxy.o        src/common.o  src/rbtree.o \
 	src/proxy_config.o  src/st_server.o    src/st_proxy.o \
-	src/proxy_command.o
+	src/proxy_command.o src/proxy_sys_command.o src/proxy_client.o
 
 CLEAN_FILES=$(OBJS) $(PROXY_OBJS) src/*gcov src/cov/*.gcno src/cov/*.gcda tests/*.pyc
 

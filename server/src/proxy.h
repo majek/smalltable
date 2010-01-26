@@ -12,6 +12,8 @@ struct st_server;
 #include "st_server.h"
 #include "st_proxy.h"
 #include "proxy_command.h"
+#include "proxy_sys_command.h"
+#include "proxy_client.h"
 
 struct st_proxy {
 	struct rb_node node;
@@ -34,8 +36,8 @@ struct st_server {
 	struct timespec next_retry;
 	
 	int queued_requests;
-	struct buffer recv_buf;
 	struct buffer send_buf;
+	struct buffer recv_buf;
 };
 
 struct config {
@@ -45,7 +47,7 @@ struct config {
 	struct rb_root proxies;
 	struct rb_root servers;
 	
-	struct buffer send_buf_internal;
+	struct buffer res_buf;
 };
 
 #endif // _PROXY_H

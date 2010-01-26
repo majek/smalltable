@@ -42,6 +42,8 @@ static int st_server_insert(struct config *config, struct st_server *data) {
 }
 
 static void _del_st_server(struct st_server *srv) {
+	buf_free(&srv->send_buf);
+	buf_free(&srv->recv_buf);
 	free(srv->host);
 	free(srv->key);
 	free(srv);
@@ -75,3 +77,30 @@ void del_st_server(struct config *config, struct st_server *srv) {
 	rb_erase(&srv->node, &config->servers);
 	_del_st_server(srv);
 }
+
+/* Apparently it's way more than O(ln(N)). */
+struct st_server *find_st_server(struct config *config, char *key, int key_sz) {
+	struct rb_node *node = config->servers.rb_node;
+	
+	while(node) {
+		struct st_server *item = container_of(node, struct st_server, node);
+		int result = key_cmp(key, key_sz, item->key, item->key_sz);
+	
+		if (result < 0) {
+			node = node->rb_left;
+		} else { // >= 0
+			struct rb_node *right = rb_next(node);
+			if(!right) {
+				return(container_of(node, struct st_server, node));
+			} else {
+				struct st_server *right_srv = container_of(right, struct st_server, node);
+				if(key_cmp(key, key_sz, right_srv->key, right_srv->key_sz) < 0)
+					return(container_of(node, struct st_server, node));
+			}
+			node = node->rb_right;
+		}
+	}
+	log_error("Server not found. That's very bad.");
+	return NULL;
+}
+

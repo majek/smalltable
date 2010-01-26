@@ -13,7 +13,9 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 	
 	struct config *config = (struct config*)conn->server->userdata;
 	
-	struct buffer *order[MAX_QUIET_REQUESTS];
+	struct st_server *servers[MAX_SERVERS];
+	int servers_no = 0;
+	struct st_server *order[MAX_QUIET_REQUESTS];
 	int requests = 0;
 	while(end_req_buf - req_buf) {
 		int request_sz = MC_GET_REQUEST_SZ(req_buf);
@@ -22,9 +24,8 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 		//	log_info("%s:%i             cmd=0x%02x(%i)", conn->host, conn->port, cmd, cmd);
 		if(MC_GET_RESERVED(req_buf) & MEMCACHE_RESERVED_FLAG_PROXY_COMMAND
 				|| MC_GET_OPCODE(req_buf) == MEMCACHE_CMD_NOOP) {
-			order[requests] = &config->send_buf_internal;
-			//TODO: process_command(req_buf, );
-			do_internal_magic();
+			order[requests] = NULL;
+			process_single(config, req_buf, request_sz);
 		} else {
 			char *key;
 			int key_sz;
@@ -37,21 +38,29 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 			memcpy(dst, req_buf, request_sz);
 			buf_produce(&srv->send_buf, request_sz);
 			
+			if(0 == srv->queued_requests)
+				servers[servers_no++] = srv;
 			srv->queued_requests++;
-			order[requests] = &srv->send_buf;
+			order[requests] = srv;
 		}
 		req_buf += request_sz;
 		requests++;
 	}
 	assert(requests <= MAX_QUIET_REQUESTS);
 	
-	do_magic(config);
+	process_memcache(servers, servers_no);
 	
 	char *src, *dst;
 	int src_sz, dst_sz;
 	int i;
 	for(i=0; i < requests; i++) {
-		struct buffer *src_buf = order[i];
+		struct buffer *src_buf;
+		if(!order[i]) {
+			src_buf = &config->res_buf;
+		} else {
+			struct st_server *srv = order[i];
+			src_buf = &srv->recv_buf;
+		}
 		buf_get_reader(src_buf, &src, &src_sz);
 		int response_sz = MC_GET_REQUEST_SZ(src);
 		buf_get_writer(&conn->send_buf, &dst, &dst_sz, response_sz);

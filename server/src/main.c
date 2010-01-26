@@ -73,6 +73,11 @@ char *flatten_engine_names() {
 void info_handler(void *arg) {
 	struct config *config = (struct config*)arg;
 	storage_sync(config->api);
+	int pool_items, pool_bytes;
+	get_pool_size(&pool_items, &pool_bytes);
+	log_info("Memory stats: %iMB in %i items in pool. Pool freed.",
+				pool_bytes/1024/1024, pool_items);
+	pool_free();
 }
 
 void quit_handler(void *arg) {
@@ -80,11 +85,6 @@ void quit_handler(void *arg) {
 	log_info("Received signal, syncing database.");
 	storage_sync(config->api);
 	log_info("Synced.");
-	int pool_items, pool_bytes;
-	get_pool_size(&pool_items, &pool_bytes);
-	log_info("Memory stats: %iMB in %i items in pool. Pool freed.",
-				pool_bytes/1024/1024, pool_items);
-	pool_free();
 }
 
 void print_help(struct server *server, struct config *config) {

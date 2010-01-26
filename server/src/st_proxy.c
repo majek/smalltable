@@ -32,7 +32,7 @@ static int st_proxy_insert(struct config *config, struct st_proxy *data) {
 
 	/* Add new node and rebalance tree. */
 	rb_link_node(&data->node, parent, new);
-	rb_insert_color(&data->node, &config->servers);
+	rb_insert_color(&data->node, &config->proxies);
 
 	return 1;
 }

@@ -10,6 +10,17 @@
 
 extern char *optarg;
 
+static void info_handler(void *arg) {
+	//struct config *config = (struct config*)arg;
+	log_info("Received info request.");
+	int pool_items, pool_bytes;
+	get_pool_size(&pool_items, &pool_bytes);
+	log_info("Memory stats: %iMB in %i items in pool. Pool freed.",
+				pool_bytes/1024/1024, pool_items);
+	pool_free();
+}
+
+
 void print_help(struct server *server, struct config *config) {
 printf(
 "Usage: smalltable-proxy [OPTION]...\n"
@@ -43,9 +54,9 @@ int main(int argc, char *argv[]) {
 	};
 	
 	struct server *server = (struct server*)st_calloc(1, sizeof(struct server));
-	//server->info_handler = &info_handler;
+	server->info_handler = &info_handler;
 	//server->quit_handler = &quit_handler;
-	//server->process_multi= &process_multi;
+	server->process_multi= &process_multi;
 
 	server->host = "127.0.0.1";
 	server->port = 22122;
@@ -78,16 +89,20 @@ int main(int argc, char *argv[]) {
 				fatal("Port number broken: %i", server->port);
 			break;
 		case 'c':
-			config->config_path = optarg;
 			break;
 		case 0:
 		default:
 			fatal("\nUnknown option: \"%s\"\n", argv[optind-1]);
 		}
 	}
+	char buf[256];
+	snprintf(buf, sizeof(buf), "%s.new", config->config_path);
+	config->config_path_new = strdup(buf);
 	
 	log_info("Process pid %i", getpid());
 	signal(SIGPIPE, SIG_IGN);
+	
+	load_config(config);
 	
 	do_event_loop(server);
 	
