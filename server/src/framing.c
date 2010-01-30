@@ -37,7 +37,7 @@ int unpack_request(ST_REQ *req, char *buf, int buf_sz) {
 	 0 - need more data
 	>0 - proper request
 */
-int reqbuf_get_sane_request_sz(char *buf, int buf_sz) {
+int reqbuf_get_sane_request_sz(char *buf, int buf_sz, int proper_magic) {
 	if(unlikely(buf_sz < MEMCACHE_HEADER_SIZE))
 		return(0);
 	int request_sz = MC_GET_BODY_LENGTH(buf) + MEMCACHE_HEADER_SIZE;
@@ -45,8 +45,8 @@ int reqbuf_get_sane_request_sz(char *buf, int buf_sz) {
 		return(0);
 	/* received enough data. now sanity. */
 	int magic = MC_GET_MAGIC(buf);
-	if(unlikely(0x80 != magic)) {
-		log_error("incorrect magic 0x%02x", magic);
+	if(unlikely(proper_magic != magic)) {
+		log_error("incorrect magic 0x%02x != 0x%02x", magic, proper_magic);
 		return(-1);
 	}
 	uint32_t extras_length = MC_GET_EXTRAS_LENGTH(buf);
@@ -116,10 +116,10 @@ void prepare_res(ST_RES *res, char *res_buf, int res_buf_sz, char *request, int 
 	res->opaque = req.opaque;
 }
 
-int error_from_reqbuf(char *request, int request_sz, char *res_buf, int res_buf_sz, int status) {
+int error_from_reqbuf(char *request, int request_sz, char *res_buf, int res_buf_sz, int status, char *err_str) {
 	ST_RES res;
 	prepare_res(&res, res_buf, res_buf_sz, request, request_sz);
-	set_error_code(&res, status);
+	set_error_code(&res, status, err_str);
 	return(pack_response(res_buf, res_buf_sz, &res));
 }
 
@@ -133,14 +133,16 @@ static char *error_codes[] = {
 	[MEMCACHE_STATUS_UNKNOWN_COMMAND]	"Unknown command"
 };
 
-ST_RES *set_error_code(ST_RES *res, unsigned char status) {
+ST_RES *set_error_code(ST_RES *res, unsigned char status, char *err_str) {
 	res->extras_sz = 0;
 	res->key_sz = 0;
 	res->cas = 0;
 
 	char *error_str = "Unknown error code";
-	if(status >= 0 && status< NELEM(error_codes))
+	if(NULL == err_str && status >= 0 && status < NELEM(error_codes))
 		error_str = error_codes[status];
+	if(NULL != err_str)
+		error_str = err_str;
 	
 	res->status = status;
 	res->value = res->buf;

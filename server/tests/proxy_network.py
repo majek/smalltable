@@ -13,7 +13,7 @@ class TestGlobal(unittest.TestCase):
         try:
             mc.get('a') # connect to server
         except MemcachedOutOfMemory:
-            pass 
+            pass
         sd = mc.conn.sd
         sd.setblocking(True)
 

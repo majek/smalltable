@@ -114,10 +114,10 @@ int process_test_str(struct config *config, char *value, int value_sz, char *key
 */
 ST_RES *cmd_code_load(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || !req->key_sz || !req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 	
 	if(NULL != find_process(req->key, req->key_sz))
-		return(set_error_code(res, MEMCACHE_STATUS_KEY_EXISTS));
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_EXISTS, NULL));
 	
 	int r;
 	char c_file[1024];
@@ -171,11 +171,11 @@ ST_RES *cmd_code_load(CONN *conn, ST_REQ *req, ST_RES *res) {
 */
 ST_RES *cmd_code_unload(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || !req->key_sz || req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 	
 	struct process *process = find_process(req->key, req->key_sz);
 	if(NULL == process)
-		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND));
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, NULL));
 	
 	process_free(process);
 	
@@ -191,12 +191,12 @@ ST_RES *cmd_code_unload(CONN *conn, ST_REQ *req, ST_RES *res) {
 */
 ST_RES *cmd_code_check(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || !req->key_sz || req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 	
 	struct process *process = find_process(req->key, req->key_sz);
 	if(NULL == process)
-		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND));
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, NULL));
 	
-	return(set_error_code(res, MEMCACHE_STATUS_KEY_EXISTS));
+	return(set_error_code(res, MEMCACHE_STATUS_KEY_EXISTS, NULL));
 }
 

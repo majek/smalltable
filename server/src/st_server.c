@@ -55,6 +55,8 @@ int new_st_server(struct config *config, char *host, int port, int weight, char 
 	srv->host = strdup(host);
 	srv->port = port;
 	srv->weight = weight;
+	srv->sd = -1;
+	srv->delay = ST_SERVER_MIN_DELAY;
 	if(key_sz) {
 		srv->key = (char*)malloc(key_sz);
 		memcpy(srv->key, key, key_sz);

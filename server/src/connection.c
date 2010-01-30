@@ -93,7 +93,7 @@ swallow_next_request:;
 	char *new_data = data + conn->quiet_recv_off;
 	int new_data_sz = data_sz - conn->quiet_recv_off;
 	
-	int request_sz = reqbuf_get_sane_request_sz(new_data, new_data_sz);
+	int request_sz = reqbuf_get_sane_request_sz(new_data, new_data_sz, 0x80);
 	switch(request_sz) {
 	case -1: /* format broken */
 		conn_close(conn);

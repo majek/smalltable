@@ -66,9 +66,9 @@ typedef struct st_res ST_RES;
 int unpack_request(ST_REQ *req, char *buf, int buf_sz);
 int pack_response(char *buf, int buf_sz, ST_RES *res);
 
-int reqbuf_get_sane_request_sz(char *buf, int buf_sz);
-int error_from_reqbuf(char *request, int request_sz, char *res_buf, int res_buf_sz, int status);
-ST_RES *set_error_code(ST_RES *res, unsigned char status);
+int reqbuf_get_sane_request_sz(char *buf, int buf_sz, int proper_magic);
+int error_from_reqbuf(char *request, int request_sz, char *res_buf, int res_buf_sz, int status, char *err_str);
+ST_RES *set_error_code(ST_RES *res, unsigned char status, char *err_str);
 
 
 #endif // _FRAMING_H

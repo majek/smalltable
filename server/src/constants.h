@@ -38,6 +38,7 @@ to pass a QUIET flag. */
 #define MEMCACHE_STATUS_ITEM_NOT_STORED		0x0005 // Item not stored
 #define MEMCACHE_STATUS_UNKNOWN_COMMAND		0x0081 // Unknown command
 #define MEMCACHE_STATUS_INTERNAL_ERROR		0x0082
+#define MEMCACHE_STATUS_CONNECTION_BROKEN	0x0083
 
 /* QUIET flag shall be in Reserved field, that's better than having two variants
 for every command */

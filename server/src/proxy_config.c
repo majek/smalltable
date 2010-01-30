@@ -9,7 +9,6 @@
 #define MAX_CONFIG_LINES 1024
 
 
-
 char *encode_hex(char *key, int key_sz) {
 	const char int_to_hex[] = "0123456789ABCDEF";
 	static char hex[512 + 2];

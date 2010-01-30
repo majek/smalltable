@@ -38,9 +38,10 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 			memcpy(dst, req_buf, request_sz);
 			buf_produce(&srv->send_buf, request_sz);
 			
-			if(0 == srv->queued_requests)
+			if(0 == srv->requests) {
 				servers[servers_no++] = srv;
-			srv->queued_requests++;
+			}
+			srv->requests++;
 			order[requests] = srv;
 		}
 		req_buf += request_sz;
@@ -48,7 +49,27 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 	}
 	assert(requests <= MAX_QUIET_REQUESTS);
 	
-	process_memcache(servers, servers_no);
+	if(servers_no) {
+		int s;
+		/* append noop */
+		char *noop = "\x80\n\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xde\xad\x00\x00\x00\x00\x00\x00\x00\x00";
+		int noop_sz = 24;
+		for(s=0; s < servers_no; s++) {
+			struct st_server *srv = servers[s];
+			char *dst;
+			int dst_sz;
+			buf_get_writer(&srv->send_buf, &dst, &dst_sz, noop_sz);
+			memcpy(dst, noop, noop_sz);
+			buf_produce(&srv->send_buf, noop_sz);
+			srv->requests++;
+		}
+		process_memcache(conn, servers, servers_no);
+		/* pop responses to noops */
+		for(s=0; s < servers_no; s++) {
+			struct st_server *srv = servers[s];
+			buf_rollback_produced(&srv->recv_buf, 24);
+		}
+	}
 	
 	char *src, *dst;
 	int src_sz, dst_sz;

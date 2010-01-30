@@ -133,7 +133,7 @@ error:;
 		int res_sz;
 		buf_get_writer(send_buf, &res, &res_sz, MAX_REQUEST_SIZE);
 		
-		int produced = error_from_reqbuf(req_buf, request_sz, res, res_sz, MEMCACHE_STATUS_UNKNOWN_COMMAND);
+		int produced = error_from_reqbuf(req_buf, request_sz, res, res_sz, MEMCACHE_STATUS_UNKNOWN_COMMAND, NULL);
 		buf_produce(send_buf, produced);
 		
 		req_buf += request_sz;

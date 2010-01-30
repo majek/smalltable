@@ -2,13 +2,14 @@ import unittest
 from utils import simple_connect, simple_new_connection
 
 from smalltable import simpleclient
-from smalltable.simpleclient import RESERVED_FLAG_PROXY_COMMAND, MemcachedOutOfMemory, MemcachedUnknownCommand, PROXY_CMD_GET_CONFIG, PROXY_CMD_SET_CONFIG, PROXY_CMD_STOP, PROXY_CMD_START, OP_GET
+from smalltable.simpleclient import RESERVED_FLAG_PROXY_COMMAND, MemcachedOutOfMemory, MemcachedKeyNotFoundError, MemcachedUnknownCommand, PROXY_CMD_GET_CONFIG, PROXY_CMD_SET_CONFIG, PROXY_CMD_STOP, PROXY_CMD_START, OP_GET
 import struct
+import socket
 
 class TestGlobal(unittest.TestCase):
     @simple_connect
     def test_unknown_server_command(self, mc):
-        self.assertRaises(simpleclient.MemcachedOutOfMemory,
+        self.assertRaises(simpleclient.MemcachedUnknownCommand,
             mc._custom_command, opcode=0x99, key='a', value='b' )
 
     @simple_connect
@@ -36,11 +37,20 @@ server\t127.0.0.3:11222, 10,
 server\t127.0.0.4:11222, 10, DADE
 ''' # whitespace here is important
 
+        self.assertRaises(MemcachedKeyNotFoundError, mc._custom_command,
+            opcode=PROXY_CMD_SET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND, value=new)
+
+        
+        mc._custom_command(opcode=PROXY_CMD_STOP, reserved=RESERVED_FLAG_PROXY_COMMAND)
         mc._custom_command(opcode=PROXY_CMD_SET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND, value=new)
+        mc._custom_command(opcode=PROXY_CMD_START, reserved=RESERVED_FLAG_PROXY_COMMAND)
+
         curr = mc._custom_command(opcode=PROXY_CMD_GET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND)
         self.assertEqual(new.split('\n', 2)[2], curr.split('\n', 2)[2])
 
+        mc._custom_command(opcode=PROXY_CMD_STOP, reserved=RESERVED_FLAG_PROXY_COMMAND)
         mc._custom_command(opcode=PROXY_CMD_SET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND, value=prev)
+        mc._custom_command(opcode=PROXY_CMD_START, reserved=RESERVED_FLAG_PROXY_COMMAND)
         curr = mc._custom_command(opcode=PROXY_CMD_GET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND)
         self.assertEqual(prev.split('\n', 2)[2], curr.split('\n', 2)[2])
 
@@ -52,7 +62,7 @@ server\t127.0.0.4:11222, 10, DADE
         except MemcachedOutOfMemory:
             pass
         sd = nc.conn.sd
-        sd.setblocking(False)
+        sd.settimeout(0.001)
         header = struct.pack('!BBHBBHIIQ',
             0x80, OP_GET, 1,
             0, 0x00, 0x00,
@@ -61,18 +71,12 @@ server\t127.0.0.4:11222, 10, DADE
             0x00)
         sd.sendall(header + 'a')
         r = sd.recv(4096)
-        self.assertNotEqual( r, '' )
+        self.assertEqual( r.startswith('\x81\x00\x00\x00\x00\x00\x00'), True)
 
         mc._custom_command(opcode=PROXY_CMD_STOP, reserved=RESERVED_FLAG_PROXY_COMMAND)
 
         sd.sendall(header + 'a')
-        try:
-            r = sd.recv(4096)
-        except Exception, (no, reason):
-            if no == 11:
-                pass
-            else:
-                raise
+        self.assertRaises(socket.timeout, sd.recv, 4096)
 
         mc._custom_command(opcode=PROXY_CMD_START, reserved=RESERVED_FLAG_PROXY_COMMAND)
 

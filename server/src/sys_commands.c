@@ -23,7 +23,7 @@ static int process_single(CONN *conn, char *request, int request_sz,
 	res.buf = res_buf + MEMCACHE_HEADER_SIZE;
 	res.buf_sz = res_buf_sz - MEMCACHE_HEADER_SIZE;
 	if(r < 0) {
-		set_error_code(&res, MEMCACHE_STATUS_INVALID_ARGUMENTS);
+		set_error_code(&res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL);
 		goto exit;
 	}
 
@@ -67,7 +67,8 @@ void builtin_commands_callback(CONN *conn, char *req_buf, int req_buf_sz,
 		} else {
 			produced = error_from_reqbuf(req_buf, request_sz,
 						res_buf, res_buf_sz,
-						MEMCACHE_STATUS_INTERNAL_ERROR);
+						MEMCACHE_STATUS_INTERNAL_ERROR,
+						NULL);
 			// not enough
 		}
 		buf_produce(send_buf, produced);
@@ -76,7 +77,7 @@ void builtin_commands_callback(CONN *conn, char *req_buf, int req_buf_sz,
 }
 
 ST_RES *cmd_unknown(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
-	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
+	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND, NULL));
 }
 
 
@@ -94,7 +95,7 @@ Get
 */
 ST_RES *cmd_get(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || !req->key_sz || req->value_sz)	
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 	
 	MC_METADATA md;
 	
@@ -103,7 +104,7 @@ ST_RES *cmd_get(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 
 	int ret = storage_get(api, &md, res->value, res->buf_sz - sizeof(md.flags), req->key, req->key_sz); //overcommiting
 	if(ret < 0)
-		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND));
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, NULL));
 
 	u_int32_t flags = htonl(md.flags);
 	memcpy(res->extras, &flags, sizeof(flags));
@@ -125,7 +126,7 @@ Set
 */
 ST_RES *cmd_set(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz != 8 || !req->key_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 
 	MC_METADATA *got_md = (MC_METADATA*)req->extras;
 	MC_METADATA md;
@@ -141,19 +142,19 @@ ST_RES *cmd_set(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 	}
 	if(req->cas) { // the requested operation MUST only succeed if the item exists and has a CAS value identical to the provided value.
 		if(ret < 0)
-			return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND));
+			return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, NULL));
 		if(req->cas && curr_md.cas != req->cas)
-			return(set_error_code(res, MEMCACHE_STATUS_ITEM_NOT_STORED));
+			return(set_error_code(res, MEMCACHE_STATUS_ITEM_NOT_STORED, NULL));
 	}
 	if(req->opcode == MEMCACHE_CMD_ADD && ret > -1) // Add MUST fail if the item already exist.
-		return(set_error_code(res, MEMCACHE_STATUS_KEY_EXISTS));
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_EXISTS, NULL));
 	
 	if(req->opcode == MEMCACHE_CMD_REPLACE && ret < 0) // Replace MUST fail if the item doesn't exist.
-		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND));
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, NULL));
 	
 	ret = storage_set(api, &md, req->value, req->value_sz, req->key, req->key_sz);
 	if(NEVER(ret < 0))
-		return(set_error_code(res, MEMCACHE_STATUS_ITEM_NOT_STORED));
+		return(set_error_code(res, MEMCACHE_STATUS_ITEM_NOT_STORED, NULL));
 	
 	res->cas = md.cas;
 	res->status = MEMCACHE_STATUS_OK;
@@ -168,11 +169,11 @@ ST_RES *cmd_set(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 */
 ST_RES *cmd_delete(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || !req->key_sz || req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 
 	int ret = storage_delete(api, req->key, req->key_sz);
 	if(ret < 0)
-		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND));
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, NULL));
 
 	res->status = MEMCACHE_STATUS_OK;
 	return(res);
@@ -186,7 +187,7 @@ ST_RES *cmd_delete(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 */
 ST_RES *cmd_noop(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || req->key_sz || req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 
 	res->status = MEMCACHE_STATUS_OK;
 	return(res);
@@ -200,7 +201,7 @@ ST_RES *cmd_noop(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 */
 ST_RES *cmd_version(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || req->key_sz || req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 
 	res->value = res->buf;
 	res->value_sz = snprintf(res->value, res->buf_sz, "%s", VERSION_STRING);

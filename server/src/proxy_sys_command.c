@@ -39,7 +39,7 @@ void process_single(CONN *conn, char *req_buf, int request_sz) {
 	res.buf = res_buf + MEMCACHE_HEADER_SIZE;
 	res.buf_sz = res_buf_sz - MEMCACHE_HEADER_SIZE;
 	if(r < 0) {
-		set_error_code(&res, MEMCACHE_STATUS_INVALID_ARGUMENTS);
+		set_error_code(&res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL);
 		goto exit;
 	}
 
@@ -59,25 +59,25 @@ exit:;
 }
 
 static ST_RES *cmd_unknown(CONN *conn, ST_REQ *req, ST_RES *res) {
-	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
+	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND, NULL));
 }
 
 static ST_RES *cmd_get_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || req->key_sz || req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 
 	struct config *config = (struct config*)conn->server->userdata;
 	res->value = res->buf;
 	int r = config_to_string(config, res->value, res->buf_sz);
 	if(r < 1)
-		return(set_error_code(res, MEMCACHE_STATUS_VALUE_TOO_BIG));
+		return(set_error_code(res, MEMCACHE_STATUS_VALUE_TOO_BIG, NULL));
 	res->value_sz = r;
 	return(res);
 }
 
 static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || req->key_sz || !req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 		
 	struct config *config = (struct config*)conn->server->userdata;
 	char *buf = (char*)malloc(req->value_sz+1);
@@ -93,6 +93,10 @@ static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 		return(res);
 	}
 	
+	if(!conn->server->stopped) {
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, "not stopped"));
+	}
+
 	memcpy(buf, req->value, req->value_sz);
 	buf[req->value_sz] = '\0'; // yes, do strip the last character
 	
@@ -110,20 +114,20 @@ static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 
 static ST_RES *cmd_stop(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || req->key_sz || req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
-	log_info("%s:%i Suspending all forwarding", conn->host, conn->port);
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 	int i = conn_stop(conn->server, conn);
-	log_info("Suspended %i connections", i);
+	log_info("%s:%i suspended %i connections", conn->host, conn->port, i);
 	res->status = MEMCACHE_STATUS_OK;
 	return(res);
 }
 
 static ST_RES *cmd_start(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || req->key_sz || req->value_sz)
-		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
-	log_info("%s:%i Restoring normal work", conn->host, conn->port);
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
+	if(!conn->server->stopped)
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, "not stopped"));
 	int i = conn_start(conn->server);
-	log_info("Restored %i connections", i);
+	log_info("%s:%i restored %i connections",conn->host, conn->port, i-1); // including myself, so subtract one
 	res->status = MEMCACHE_STATUS_OK;
 	return(res);
 }

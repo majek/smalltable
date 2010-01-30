@@ -19,7 +19,8 @@ PROXY_FILES=\
 	src/proxy_sys_command.c	\
 	src/rbtree.c		\
 	src/st_proxy.c		\
-	src/st_server.c
+	src/st_server.c		\
+	src/uevent.c
 
 SERVER_FILES=\
 	src/main.c		\
@@ -64,3 +65,8 @@ proxy_tests: smalltable-proxy-cov test_clean
 	@echo -e "\n***** Coverage C *****"
 	@python gcovst.py "$(BLACKLIST) $(SERVER_FILES)" src
 	@pgrep smalltable-proxy-cov || true
+
+proxy_foreground_tests:
+	SERVERPORT=22122 PYTHONPATH=.:../client \
+					$(PYTHON) tests/run.py tests ./tests 'proxy_*.py'
+

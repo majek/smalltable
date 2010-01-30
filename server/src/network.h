@@ -14,3 +14,4 @@
 
 int net_bind(char *host, int port);
 int net_accept(int sd, char **host, int *port);
+int net_connect(char *host, int port);

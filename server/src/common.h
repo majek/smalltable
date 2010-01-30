@@ -20,6 +20,26 @@
 
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
+#define _NANO 1000000000LL
+#define _MICRO 1000000LL
+#define _MILLI 1000LL
+
+/* Timespec subtraction in nanoseconds */
+#define TIMESPEC_NSEC_SUBTRACT(a,b) (((a).tv_sec - (b).tv_sec) * _NANO + (a).tv_nsec - (b).tv_nsec)
+/* Timespec subtract in milliseconds */
+#define TIMESPEC_MSEC_SUBTRACT(a,b) ((((a).tv_sec - (b).tv_sec) * _MILLI) + ((a).tv_nsec - (b).tv_nsec) / _MICRO)
+/* Timespec subtract in seconds; truncate towards zero */
+#define TIMESPEC_SEC_SUBTRACT(a,b) ((a).tv_sec - (b).tv_sec + (((a).tv_nsec < (b).tv_nsec) ? -1 : 0))
+
+#define TIMESPEC_BEFORE(a, b) (((a).tv_sec < (b).tv_sec) || ((a).tv_sec == (b).tv_sec && (a).tv_nsec < (b).tv_nsec))
+
+#define TIMESPEC_ADD(a, b, nsecs) { \
+		(a).tv_sec = (b).tv_sec + ((nsecs) / _NANO); \
+		(a).tv_nsec = (b).tv_nsec + ((nsecs) % _NANO); \
+		(a).tv_sec += (a).tv_nsec / _NANO; \
+		(a).tv_nsec %= _NANO; \
+	}
+
 
 void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 

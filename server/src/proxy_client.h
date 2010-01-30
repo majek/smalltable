@@ -1,2 +1,3 @@
 
-void process_memcache(struct st_server *servers[], int servers_no);
+void process_memcache(CONN *conn, struct st_server *servers[], int servers_sz);
+

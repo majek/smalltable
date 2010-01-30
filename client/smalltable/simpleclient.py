@@ -93,6 +93,7 @@ STATUS_ITEM_NON_NUMERIC = 0x0006
 
 STATUS_UNKNOWN_COMMAND = 0x0081
 STATUS_OUT_OF_MEMORY = 0x0082
+STATUS_CONNECTION_BROKEN = 0x0083
 
 PROXY_CMD_GET_CONFIG           = 0x01
 PROXY_CMD_SET_CONFIG           = 0x02
@@ -137,6 +138,7 @@ class MemcachedItemNotStored(MemcachedError): pass
 class MemcachedItemNonNumeric(MemcachedError): pass
 class MemcachedUnknownCommand(MemcachedError): pass
 class MemcachedOutOfMemory(MemcachedError): pass
+class MemcachedConnectionBroken(MemcachedError): pass
 
 # Client exceptions
 class MemcachedEncodingError(MemcachedError): pass
@@ -157,6 +159,7 @@ status_exceptions = {
     STATUS_ITEM_NON_NUMERIC:MemcachedItemNonNumeric,
     STATUS_UNKNOWN_COMMAND:MemcachedUnknownCommand,
     STATUS_OUT_OF_MEMORY:MemcachedOutOfMemory,
+    STATUS_CONNECTION_BROKEN:MemcachedConnectionBroken,
 }
 
 

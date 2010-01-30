@@ -35,9 +35,14 @@ struct st_server {
 	
 	int sd;
 	struct timespec next_retry;
+	long long delay; // in nsec
 	
-	int queued_requests;
+	int requests;
+	int send_offset;
 	struct buffer send_buf;
+
+	int responses;
+	int recv_offset;
 	struct buffer recv_buf;
 };
 
