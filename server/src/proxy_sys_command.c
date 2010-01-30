@@ -109,10 +109,22 @@ static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 }
 
 static ST_RES *cmd_stop(CONN *conn, ST_REQ *req, ST_RES *res) {
-	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
+	if(req->extras_sz || req->key_sz || req->value_sz)
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+	log_info("%s:%i Suspending all forwarding", conn->host, conn->port);
+	int i = conn_stop(conn->server, conn);
+	log_info("Suspended %i connections", i);
+	res->status = MEMCACHE_STATUS_OK;
+	return(res);
 }
 
 static ST_RES *cmd_start(CONN *conn, ST_REQ *req, ST_RES *res) {
-	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
+	if(req->extras_sz || req->key_sz || req->value_sz)
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+	log_info("%s:%i Restoring normal work", conn->host, conn->port);
+	int i = conn_start(conn->server);
+	log_info("Restored %i connections", i);
+	res->status = MEMCACHE_STATUS_OK;
+	return(res);
 }
 

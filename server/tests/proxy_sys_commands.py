@@ -1,8 +1,9 @@
 import unittest
-from utils import simple_connect
+from utils import simple_connect, simple_new_connection
 
 from smalltable import simpleclient
-from smalltable.simpleclient import RESERVED_FLAG_PROXY_COMMAND, MemcachedOutOfMemory, MemcachedUnknownCommand, PROXY_CMD_GET_CONFIG, PROXY_CMD_SET_CONFIG
+from smalltable.simpleclient import RESERVED_FLAG_PROXY_COMMAND, MemcachedOutOfMemory, MemcachedUnknownCommand, PROXY_CMD_GET_CONFIG, PROXY_CMD_SET_CONFIG, PROXY_CMD_STOP, PROXY_CMD_START, OP_GET
+import struct
 
 class TestGlobal(unittest.TestCase):
     @simple_connect
@@ -42,3 +43,40 @@ server\t127.0.0.4:11222, 10, DADE
         mc._custom_command(opcode=PROXY_CMD_SET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND, value=prev)
         curr = mc._custom_command(opcode=PROXY_CMD_GET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND)
         self.assertEqual(prev.split('\n', 2)[2], curr.split('\n', 2)[2])
+
+    @simple_connect
+    def test_cmd_stop_start(self, mc):
+        nc = simple_new_connection()
+        try:
+            nc.get('a') # connect to server
+        except MemcachedOutOfMemory:
+            pass
+        sd = nc.conn.sd
+        sd.setblocking(False)
+        header = struct.pack('!BBHBBHIIQ',
+            0x80, OP_GET, 1,
+            0, 0x00, 0x00,
+            1,
+            0xDEAD,
+            0x00)
+        sd.sendall(header + 'a')
+        r = sd.recv(4096)
+        self.assertNotEqual( r, '' )
+
+        mc._custom_command(opcode=PROXY_CMD_STOP, reserved=RESERVED_FLAG_PROXY_COMMAND)
+
+        sd.sendall(header + 'a')
+        try:
+            r = sd.recv(4096)
+        except Exception, (no, reason):
+            if no == 11:
+                pass
+            else:
+                raise
+
+        mc._custom_command(opcode=PROXY_CMD_START, reserved=RESERVED_FLAG_PROXY_COMMAND)
+
+        r = sd.recv(4096)
+        self.assertNotEqual( r, '' )
+
+
