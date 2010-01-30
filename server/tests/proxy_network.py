@@ -1,6 +1,7 @@
 import unittest
 from utils import simple_connect
 import struct
+import socket
 
 from smalltable import simpleclient
 from smalltable.simpleclient import RESERVED_FLAG_PROXY_COMMAND, \
@@ -24,7 +25,10 @@ class TestGlobal(unittest.TestCase):
             len(value),
             0xDEAD,
             0x00)
-        sd.sendall(header + value)
+        try:
+            sd.sendall(header + value)
+        except socket.error:
+            pass
         r = sd.recv(4096)
         self.assertEqual( r, '' )
 

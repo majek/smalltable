@@ -60,3 +60,14 @@ void del_st_proxy(struct config *config, struct st_proxy *proxy) {
 	rb_erase(&proxy->node, &config->proxies);
 	_del_st_proxy(proxy);
 }
+
+void free_all_proxies(struct config *config) {
+	while(1) {
+		struct rb_node *first_node = (config->proxies.rb_node);
+		if(NULL == first_node)
+			break;
+		struct st_proxy *proxy = container_of(first_node, struct st_proxy, node);
+		del_st_proxy(config, proxy);
+	}
+}
+

@@ -1,16 +1,114 @@
+#include <string.h>
+
 #include "shared.h"
 #include "proxy.h"
+
+static ST_RES *cmd_unknown(struct config *config, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_get_config(struct config *config, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_set_config(struct config *config, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_stop(struct config *config, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_start(struct config *config	, ST_REQ *req, ST_RES *res);
+
+
+typedef ST_RES* (*system_cmd_t)(struct config *config, ST_REQ *req, ST_RES *res);
+
+struct {
+	system_cmd_t foo;
+} cmd_pointers[] = {
+	[PROXY_CMD_GET_CONFIG]		{&cmd_get_config},
+	[PROXY_CMD_SET_CONFIG]		{&cmd_set_config},
+	[PROXY_CMD_STOP]		{&cmd_stop},
+	[PROXY_CMD_START]		{&cmd_start}
+};
+
 
 void process_single(struct config *config, char *req_buf, int request_sz) {
 	char *res_buf;
 	int res_buf_sz;
 	buf_get_writer(&config->res_buf, &res_buf, &res_buf_sz, MAX_REQUEST_SIZE);
 	
-	int produced = error_from_reqbuf(req_buf, request_sz,
-						res_buf, res_buf_sz,
-						MEMCACHE_STATUS_INTERNAL_ERROR);
+	ST_REQ req;
+	int r = unpack_request(&req, req_buf, request_sz);
+
+	ST_RES res;
+	memset(&res, 0, sizeof(res));
+	res.opcode = req.opcode;
+	res.opaque = req.opaque;
+	res.buf = res_buf + MEMCACHE_HEADER_SIZE;
+	res.buf_sz = res_buf_sz - MEMCACHE_HEADER_SIZE;
+	if(r < 0) {
+		set_error_code(&res, MEMCACHE_STATUS_INVALID_ARGUMENTS);
+		goto exit;
+	}
+
 	
+	int cmd = req.opcode;
+	system_cmd_t foo = cmd_unknown;
+	if(cmd >= 0 && cmd < NELEM(cmd_pointers)) {
+		foo = cmd_pointers[cmd].foo;
+	}
+	
+	foo(config, &req, &res);
+	
+exit:;
+	int produced = pack_response(res_buf, res_buf_sz, &res);
 	buf_produce(&config->res_buf, produced);
 	return;
+}
+
+static ST_RES *cmd_unknown(struct config *config, ST_REQ *req, ST_RES *res) {
+	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
+}
+
+static ST_RES *cmd_get_config(struct config *config, ST_REQ *req, ST_RES *res) {
+	if(req->extras_sz || req->key_sz || req->value_sz)
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+
+	res->value = res->buf;
+	int r = config_to_string(config, res->value, res->buf_sz);
+	if(r < 1)
+		return(set_error_code(res, MEMCACHE_STATUS_VALUE_TOO_BIG));
+	res->value_sz = r;
+	return(res);
+}
+
+static ST_RES *cmd_set_config(struct config *config, ST_REQ *req, ST_RES *res) {
+	if(req->extras_sz || req->key_sz || !req->value_sz)
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
+		
+	char *buf = (char*)malloc(req->value_sz+1);
+	memcpy(buf, req->value, req->value_sz);
+	buf[req->value_sz] = '\0'; // yes, do strip the last character
+	
+	/* pretend to load, it modifies stuff inplace */
+	char *err = load_config_from_string(config, buf, 1);
+	if(err) {
+		res->value = res->buf;
+		strncpy(res->value, err, res->buf_sz);
+		res->status = MEMCACHE_STATUS_ITEM_NOT_STORED;
+		return(res);
+	}
+	
+	memcpy(buf, req->value, req->value_sz);
+	buf[req->value_sz] = '\0'; // yes, do strip the last character
+	
+	/* really load */
+	flush_config(config);
+	err = load_config_from_string(config, buf, 0);
+	if(err) {
+		log_error("Trying to load broken config. That's really bad.");
+		fatal("Lost previous config. Don't know what to do.");
+	}
+	
+	res->status = MEMCACHE_STATUS_OK;
+	return(res);
+}
+
+static ST_RES *cmd_stop(struct config *config, ST_REQ *req, ST_RES *res) {
+	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
+}
+
+static ST_RES *cmd_start(struct config *config	, ST_REQ *req, ST_RES *res) {
+	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
 }
 

@@ -24,6 +24,11 @@ to pass a QUIET flag. */
 #define MEMCACHE_XCMD_CODE_CHECK	0x72 //   Check code version
 
 
+#define PROXY_CMD_GET_CONFIG		0x01
+#define PROXY_CMD_SET_CONFIG		0x02
+#define PROXY_CMD_STOP			0x03
+#define PROXY_CMD_START			0x04
+
 
 #define MEMCACHE_STATUS_OK			0x0000 // No error
 #define MEMCACHE_STATUS_KEY_NOT_FOUND		0x0001 // Key not found

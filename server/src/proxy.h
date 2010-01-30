@@ -14,6 +14,7 @@ struct st_server;
 #include "proxy_command.h"
 #include "proxy_sys_command.h"
 #include "proxy_client.h"
+#include "proxy_config.h"
 
 struct st_proxy {
 	struct rb_node node;

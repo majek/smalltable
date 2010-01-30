@@ -104,3 +104,12 @@ struct st_server *find_st_server(struct config *config, char *key, int key_sz) {
 	return NULL;
 }
 
+void free_all_servers(struct config *config) {
+	while(1) {
+		struct rb_node *first_node = (config->servers.rb_node);
+		if(NULL == first_node)
+			break;
+		struct st_server *server = container_of(first_node, struct st_server, node);
+		del_st_server(config, server);
+	}
+}

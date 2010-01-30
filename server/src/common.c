@@ -4,6 +4,11 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include "common.h"
 
 void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
@@ -115,3 +120,35 @@ int key_escape(char *dst, int dst_sz, char *key, int key_sz){
 	return p;
 }
 
+static int get_fd_size(int fd, u_int64_t *size) {
+	struct stat st;
+	if(fstat(fd, &st) != 0){
+		log_perror("stat()");
+		return(-1);
+	}
+	if(size)
+		*size = st.st_size;
+	return(0);
+}
+
+char *read_full_file(char *filename) {
+	int fd = open(filename, O_RDONLY);
+	if(fd < 0)
+		return(NULL);
+	
+	u_int64_t file_size;
+	if(-1 == get_fd_size(fd, &file_size)) {
+		goto error;
+	}
+	char *buf = (char*)malloc(file_size);
+	int ret = read(fd, buf, file_size);
+	if(ret != file_size) {
+		free(buf);
+		goto error;
+	}
+	close(fd);
+	return(buf);
+error:;
+	close(fd);
+	return(NULL);
+}

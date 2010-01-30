@@ -37,3 +37,5 @@ unsigned long hash_djb2(char *s);
 unsigned long hash_kr(char *p);
 unsigned long hash_sum(char *str);
 int key_escape(char *dst, int dst_sz, char *key, int key_sz);
+
+char *read_full_file(char *filename);
