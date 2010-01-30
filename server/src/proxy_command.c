@@ -25,7 +25,7 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 		if(MC_GET_RESERVED(req_buf) & MEMCACHE_RESERVED_FLAG_PROXY_COMMAND
 				|| MC_GET_OPCODE(req_buf) == MEMCACHE_CMD_NOOP) {
 			order[requests] = NULL;
-			process_single(config, req_buf, request_sz);
+			process_single(conn, req_buf, request_sz);
 		} else {
 			char *key;
 			int key_sz;

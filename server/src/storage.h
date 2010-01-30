@@ -13,7 +13,7 @@ struct st_storage_api {
 	int (*set)(void *storage_data, char *value, int value_sz, char *key, int key_sz);
 	int (*del)(void *storage_data, char *key, int key_sz);
 	void (*sync)(void *storage_data);
-	void (*prefetch)(void *storage_data, char **keys, int *key_sz, int items_counter);
+	void (*readahead)(void *storage_data, char **keys, int *key_sz, int items_counter);
 	void *storage_data;
 };
 typedef struct st_storage_api ST_STORAGE_API;

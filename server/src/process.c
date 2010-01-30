@@ -346,8 +346,8 @@ int syscall_st_prefetch(CONN *conn, struct process *process, vxproc *proc, vxmma
 	if(items_counter < 0)
 		return(-EINVAL);
 	if(0 == keys_addr && 0 == keys_sz_addr && 0 == items_counter) {
-		if(api->prefetch)
-			api->prefetch(api->storage_data, NULL, NULL, 0);
+		if(api->readahead)
+			api->readahead(api->storage_data, NULL, NULL, 0);
 		return(0);
 	}
 	if(!vxmem_checkperm(proc->mem, keys_addr, sizeof(char*)*items_counter, VXPERM_READ|VXPERM_WRITE, NULL))
@@ -358,13 +358,13 @@ int syscall_st_prefetch(CONN *conn, struct process *process, vxproc *proc, vxmma
 	char **keys = (char**)((char *)m->base + keys_addr);
 	int *keys_sz = (int*)((char*)m->base + keys_sz_addr);
 
-	if(api->prefetch) {
+	if(api->readahead) {
 		int i;
 		/* fix key pointers */
 		for(i=0; i < items_counter; i++) {
 			keys[i] = (char*)m->base + (long)keys[i];
 		}
-		api->prefetch(api->storage_data, keys, keys_sz, items_counter);
+		api->readahead(api->storage_data, keys, keys_sz, items_counter);
 		/* clear pointers */
 		memset(keys, 0, sizeof(keys[0])*items_counter);
 	}

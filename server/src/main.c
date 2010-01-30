@@ -150,6 +150,7 @@ int main(int argc, char *argv[]) {
 	server->info_handler = &info_handler;
 	server->quit_handler = &quit_handler;
 	server->process_multi= &process_multi;
+	INIT_LIST_HEAD(&server->root);
 	
 	server->host = "127.0.0.1";
 	server->port = 22122;

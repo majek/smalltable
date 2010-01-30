@@ -3,14 +3,14 @@
 #include "shared.h"
 #include "proxy.h"
 
-static ST_RES *cmd_unknown(struct config *config, ST_REQ *req, ST_RES *res);
-static ST_RES *cmd_get_config(struct config *config, ST_REQ *req, ST_RES *res);
-static ST_RES *cmd_set_config(struct config *config, ST_REQ *req, ST_RES *res);
-static ST_RES *cmd_stop(struct config *config, ST_REQ *req, ST_RES *res);
-static ST_RES *cmd_start(struct config *config	, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_unknown(CONN *conn, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_get_config(CONN *conn, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_stop(CONN *conn, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_start(CONN *conn, ST_REQ *req, ST_RES *res);
 
 
-typedef ST_RES* (*system_cmd_t)(struct config *config, ST_REQ *req, ST_RES *res);
+typedef ST_RES* (*system_cmd_t)(CONN *conn, ST_REQ *req, ST_RES *res);
 
 struct {
 	system_cmd_t foo;
@@ -22,7 +22,9 @@ struct {
 };
 
 
-void process_single(struct config *config, char *req_buf, int request_sz) {
+void process_single(CONN *conn, char *req_buf, int request_sz) {
+	struct config *config = (struct config*)conn->server->userdata;
+	
 	char *res_buf;
 	int res_buf_sz;
 	buf_get_writer(&config->res_buf, &res_buf, &res_buf_sz, MAX_REQUEST_SIZE);
@@ -48,7 +50,7 @@ void process_single(struct config *config, char *req_buf, int request_sz) {
 		foo = cmd_pointers[cmd].foo;
 	}
 	
-	foo(config, &req, &res);
+	foo(conn, &req, &res);
 	
 exit:;
 	int produced = pack_response(res_buf, res_buf_sz, &res);
@@ -56,14 +58,15 @@ exit:;
 	return;
 }
 
-static ST_RES *cmd_unknown(struct config *config, ST_REQ *req, ST_RES *res) {
+static ST_RES *cmd_unknown(CONN *conn, ST_REQ *req, ST_RES *res) {
 	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
 }
 
-static ST_RES *cmd_get_config(struct config *config, ST_REQ *req, ST_RES *res) {
+static ST_RES *cmd_get_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || req->key_sz || req->value_sz)
 		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
 
+	struct config *config = (struct config*)conn->server->userdata;
 	res->value = res->buf;
 	int r = config_to_string(config, res->value, res->buf_sz);
 	if(r < 1)
@@ -72,10 +75,11 @@ static ST_RES *cmd_get_config(struct config *config, ST_REQ *req, ST_RES *res) {
 	return(res);
 }
 
-static ST_RES *cmd_set_config(struct config *config, ST_REQ *req, ST_RES *res) {
+static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || req->key_sz || !req->value_sz)
 		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS));
 		
+	struct config *config = (struct config*)conn->server->userdata;
 	char *buf = (char*)malloc(req->value_sz+1);
 	memcpy(buf, req->value, req->value_sz);
 	buf[req->value_sz] = '\0'; // yes, do strip the last character
@@ -104,11 +108,11 @@ static ST_RES *cmd_set_config(struct config *config, ST_REQ *req, ST_RES *res) {
 	return(res);
 }
 
-static ST_RES *cmd_stop(struct config *config, ST_REQ *req, ST_RES *res) {
+static ST_RES *cmd_stop(CONN *conn, ST_REQ *req, ST_RES *res) {
 	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
 }
 
-static ST_RES *cmd_start(struct config *config	, ST_REQ *req, ST_RES *res) {
+static ST_RES *cmd_start(CONN *conn, ST_REQ *req, ST_RES *res) {
 	return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND));
 }
 

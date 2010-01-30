@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "shared.h"
 #include "proxy.h"
 

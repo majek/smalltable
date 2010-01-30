@@ -114,7 +114,7 @@ prerequisits:
 			exit 1;);	\
 	fi
 
-all: smalltable server_tests
+all: smalltable smalltable-proxy server_tests proxy_tests
 
 include Makevx32
 include Maketests

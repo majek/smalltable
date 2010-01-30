@@ -19,6 +19,7 @@ struct connection {
 	int requests;
 	
 	struct server *server;
+	struct list_head list;
 };
 
 typedef struct connection CONN;
@@ -26,3 +27,6 @@ typedef struct connection CONN;
 CONN *conn_new(int cd, char *host, int port, struct server *server);
 void conn_recv(CONN *conn);
 void conn_send(CONN *conn);
+
+int conn_stop(struct server *server, CONN *exception);
+int conn_start(struct server *server);

@@ -20,8 +20,11 @@ CONN *conn_new(int cd, char *host, int port, struct server *server) {
 	conn->event.cd = cd;
 	conn->event.callback = &client_callback;
 
+	list_add(&(conn->list), &(server->root));
+
 	modify_event(&conn->event, META_EVENT_ONLY_READ);
-	modify_event(&conn->event, META_EVENT_REGISTER);
+	if(0 == server->stopped)
+		modify_event(&conn->event, META_EVENT_REGISTER);
 	return(conn);
 }
 
@@ -36,6 +39,8 @@ void conn_free(CONN *conn) {
 	buf_free(&conn->recv_buf);
 	buf_free(&conn->send_buf);
 	
+	list_del(&(conn->list));
+
 	free(conn);
 }
 
@@ -165,3 +170,25 @@ void conn_send(CONN *conn) {
 	}
 }
 
+static int conn__do_for_all(struct server *server, CONN *exception, int flag) {
+	struct list_head *pos;
+	int i = 0;
+	list_for_each(pos, &(server->root)) {
+		CONN *conn = list_entry(pos, CONN, list);
+		if(conn != exception) {
+			i++;
+			modify_event(&conn->event, flag);
+		}
+	}
+	return(i);
+}
+
+int conn_stop(struct server *server, CONN *exception) {
+	server->stopped = 1;
+	return conn__do_for_all(server, exception, META_EVENT_UNREGISTER);
+}
+
+int conn_start(struct server *server) {
+	server->stopped = 0;
+	return conn__do_for_all(server, NULL, META_EVENT_REGISTER);
+}

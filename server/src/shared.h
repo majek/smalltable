@@ -6,6 +6,9 @@
 /* derived from libevent */
 typedef void (*ev_callback_t)(int,short,void*);
 
+#include "list.h"
+
+
 #include "coverage.h"
 
 struct config;

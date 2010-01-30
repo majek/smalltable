@@ -50,7 +50,7 @@ server_tests: smalltable-cov test_clean
 
 server_foreground_tests:
 	SERVERPORT=22122 PYTHONPATH=.:../client \
-					$(PYTHON) tests/run.py tests ./tests
+					$(PYTHON) tests/run.py tests ./tests 'test_*.py'
 
 proxy_tests: smalltable-proxy-cov test_clean
 	$(PYTHON) tests/server_runner.py $(PORT)		\

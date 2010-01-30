@@ -31,6 +31,9 @@ struct server {
 	void (*quit_handler)(void *userdata);
 	int (*process_multi)(struct connection *conn, char *requests, int requests_sz);
 	void *userdata;
+
+	int stopped;
+	struct list_head root;
 };
 
 

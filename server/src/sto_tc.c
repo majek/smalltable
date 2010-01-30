@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "st.h"
+#include "shared.h"
+#include "storage.h"
 
 #include <tcutil.h>
 #include <tchdb.h>

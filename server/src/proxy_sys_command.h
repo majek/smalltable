@@ -1,1 +1,1 @@
-void process_single(struct config *config, char *req_buf, int request_sz);
+void process_single(CONN *conn, char *req_buf, int request_sz);

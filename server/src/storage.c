@@ -58,7 +58,7 @@ void storage_sync(ST_STORAGE_API *api) {
 }
 
 void storage_prefetch(ST_STORAGE_API *api, char **keys, int *key_sz, int items_counter) {
-	if(api->prefetch)
-		api->prefetch(api->storage_data, keys, key_sz, items_counter);
+	if(api->readahead)
+		api->readahead(api->storage_data, keys, key_sz, items_counter);
 }
 

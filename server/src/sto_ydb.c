@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "st.h"
+#include "shared.h"
+#include "storage.h"
 
 #include <ydb.h>
 
@@ -36,7 +37,7 @@ static void sync(void *storage_data) {
 	ydb_sync(ydbd->ydb);
 }
 
-static void prefetch(void *storage_data, char **keys, int *key_szs, int items_counter) {
+static void readahead(void *storage_data, char **keys, int *key_szs, int items_counter) {
 	YDB_DATA *ydbd = (YDB_DATA *)storage_data;
 	unsigned short *sz = (unsigned short*)key_szs;
 	int i;
@@ -66,7 +67,7 @@ ST_STORAGE_API *storage_ydb_create(int argc, char **argv) {
 	api->set = &set;
 	api->del = &del;
 	api->sync = &sync;
-	api->prefetch = &prefetch;
+	api->readahead = &readahead;
 	api->storage_data = ydbd;
 	return(api);
 }
