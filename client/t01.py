@@ -7,7 +7,8 @@ while True:
     print "press any key to continue"
     raw_input()
     try:
-        print a.get_multi(["%c%c%c" % (i,j,k) for i in range(256) for j in range(128) for k in range(1)])
+        x = a.get_multi(["%c%c%c" % (i,j,k) for i in range(256) for j in range(256) for k in range(32)])
+        print len(x)
     except:
         traceback.print_exc()
 

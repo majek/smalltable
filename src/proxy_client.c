@@ -21,7 +21,7 @@ static int do_connection_error(struct uevent *uevent, struct st_server *srv, str
 
 
 void process_memcache(CONN *conn, struct st_server *servers[], int servers_sz) {
-	struct uevent uevent;
+	static struct uevent uevent;
 	uevent_new(&uevent);
 
 	int i;
@@ -57,8 +57,9 @@ static int do_start(struct uevent *uevent, struct st_server *srv, struct timespe
 
 static int do_connected(struct uevent *uevent, int sd, int mask, struct st_server *srv) {
 	int optval = 0;
-	socklen_t optlen;
+	socklen_t optlen = sizeof(optval);
 	if(0 != getsockopt(sd, SOL_SOCKET, SO_ERROR, (char *) &optval, &optlen)) {
+		log_perror("server %s:%i getsockopt(%i, SO_ERROR)", srv->host, srv->port, sd);
 		goto error;
 	}
 	if(optval) { /* error on connect */
@@ -85,6 +86,8 @@ static int do_write(struct uevent *uevent, int sd, int mask, struct st_server *s
 		}
 		r = 0;
 	}
+	//if(conn->server->trace)
+	//	log_info("server %s:%i send %i", srv->host, srv->port, r);
 	srv->send_offset += r;
 	if(srv->send_offset != buf_sz) {
 		return uevent_yield(uevent, srv->sd, UEVENT_WRITE, (uevent_callback_t)do_write, (void*)srv);
@@ -100,7 +103,7 @@ retry:;
 	buf_get_writer(&srv->recv_buf, &buf, &buf_sz, 65536);
 	
 	errno = 0;
-	int r = recv(srv->sd, buf+srv->recv_offset, buf_sz - srv->recv_offset, MSG_DONTWAIT);
+	int r = recv(srv->sd, buf, buf_sz, MSG_DONTWAIT);
 	if(r <= 0) {
 		if(EAGAIN == errno) {
 			r = 0;
@@ -110,7 +113,9 @@ retry:;
 		}
 	}
 	buf_produce(&srv->recv_buf, r);
-	if(r == buf_sz - srv->recv_offset)
+	//if(conn->server->trace)
+	//	log_info("server %s:%i recv %i", srv->host, srv->port, r);
+	if(r == buf_sz)
 		goto retry;
 	
 swallow_next_request:;
@@ -124,7 +129,7 @@ swallow_next_request:;
 	int request_sz = reqbuf_get_sane_request_sz(new_data, new_data_sz, 0x81);
 	switch(request_sz) {
 	case -1: /* format broken */
-		log_debug("server %s:%i bad data on the wire", srv->host, srv->port);
+		log_debug("server %s:%i bad data on the wire (response %i in bulk) data_sz=%i", srv->host, srv->port, srv->responses, new_data_sz);
 		return do_connection_error(uevent, srv, NULL);
 	case 0:  /* need more data */
 		return uevent_yield(uevent, srv->sd, UEVENT_READ, (uevent_callback_t)do_read, (void*)srv);

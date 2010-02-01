@@ -15,15 +15,19 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 	
 	struct st_server *servers[MAX_SERVERS];
 	int servers_no = 0;
+	
 	struct st_server *order[MAX_QUIET_REQUESTS];
 	int requests = 0;
 	while(end_req_buf - req_buf) {
 		int request_sz = MC_GET_REQUEST_SZ(req_buf);
+		int cmd = MC_GET_OPCODE(req_buf);
+		int do_in_proxy =  (cmd == MEMCACHE_CMD_NOOP ||
+			MC_GET_RESERVED(req_buf) & MEMCACHE_RESERVED_FLAG_PROXY_COMMAND);
 		
-		//if(NEVER(conn->server->trace))
-		//	log_info("%s:%i             cmd=0x%02x(%i)", conn->host, conn->port, cmd, cmd);
-		if(MC_GET_RESERVED(req_buf) & MEMCACHE_RESERVED_FLAG_PROXY_COMMAND
-				|| MC_GET_OPCODE(req_buf) == MEMCACHE_CMD_NOOP) {
+		//if(conn->server->trace)
+		//	log_info("%s:%i             cmd=0x%02x(%i) proxy=%i", conn->host, conn->port, cmd, cmd, do_in_proxy?1:0);
+		
+		if(do_in_proxy) {
 			order[requests] = NULL;
 			process_single(conn, req_buf, request_sz);
 		} else {

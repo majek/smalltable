@@ -19,7 +19,7 @@ struct mem_pool_item {
 
 static struct mem_pool_item *mem_pool_first;
 
-static void pool_get(char **buf_ptr, int *buf_sz_ptr) {
+void pool_get(char **buf_ptr, int *buf_sz_ptr) {
 	if(NULL == mem_pool_first) {
 		*buf_ptr = (char*)st_malloc( INITIAL_BUF_SIZE );
 		*buf_sz_ptr = INITIAL_BUF_SIZE;
@@ -32,7 +32,7 @@ static void pool_get(char **buf_ptr, int *buf_sz_ptr) {
 	return;
 }
 
-static void pool_put(char *buf, int buf_sz) {
+void pool_put(char *buf, int buf_sz) {
 	struct mem_pool_item *item = (struct mem_pool_item *)buf;
 	item->buf_sz = buf_sz;
 	item->next = mem_pool_first;

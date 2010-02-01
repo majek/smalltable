@@ -1,7 +1,7 @@
 CC = gcc
 LD = $(CC)
 
-DEBUG_CFLAGS = -g
+DEBUG_CFLAGS = -g -fstack-protector-all -Wstack-protector -fstack-check
 
 CPU = generic
 ARCH = generic

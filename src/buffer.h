@@ -68,6 +68,8 @@ static inline void* st_calloc(int items, int size) {
 	return(buf);
 }
 
+void pool_get(char **buf_ptr, int *buf_sz_ptr);
+void pool_put(char *buf, int buf_sz);
 
 
 #endif // _BUFFER_H

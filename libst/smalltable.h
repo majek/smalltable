@@ -88,7 +88,7 @@ int st_write_responses(char *buf, int buf_sz);
 #define MEMCACHE_HEADER_SIZE (24)
 #define MAX_EXTRAS_SIZE (256)
 #define MAX_KEY_SIZE (256)
-#define MAX_VALUE_SIZE (4*1024*1024)
+#define MAX_VALUE_SIZE (4*1024*1024+128)
 #define MAX_REQUEST_SIZE (MEMCACHE_HEADER_SIZE + MAX_EXTRAS_SIZE + MAX_KEY_SIZE + MAX_VALUE_SIZE + 32)
 
 

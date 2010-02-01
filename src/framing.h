@@ -6,8 +6,16 @@
 #define MEMCACHE_HEADER_SIZE (24)
 #define MAX_EXTRAS_SIZE (256)
 #define MAX_KEY_SIZE (256)
-#define MAX_VALUE_SIZE (4*1024*1024)
+#define MAX_VALUE_SIZE (4*1024*1024+128)
 #define MAX_REQUEST_SIZE (MEMCACHE_HEADER_SIZE + MAX_EXTRAS_SIZE + MAX_KEY_SIZE + MAX_VALUE_SIZE + 32)
+
+/* Max number of requests per one bulk that is forwarded to lower levels. This
+   has several implications. One is that the smaller number the worse prefetch
+   boost. */
+#ifndef MAX_QUIET_REQUESTS
+#define MAX_QUIET_REQUESTS ((MAX_REQUEST_SIZE / MEMCACHE_HEADER_SIZE) + 1)
+#endif
+
 
 struct memcache_header{
 	// network byte order
