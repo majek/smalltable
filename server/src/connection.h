@@ -3,7 +3,7 @@
    has several implications. One is that the smaller number the worse prefetch
    boost. */
 #ifndef MAX_QUIET_REQUESTS
-#define MAX_QUIET_REQUESTS (4096)
+#define MAX_QUIET_REQUESTS (174762)
 #endif
 
 struct connection {

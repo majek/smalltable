@@ -36,35 +36,6 @@ void process_memcache(CONN *conn, struct st_server *servers[], int servers_sz) {
 						conn->host, conn->port,
 						servers_sz, r,
 						TIMESPEC_MSEC_SUBTRACT(t1, t0));
-/*
-	for(i=0; i < servers_sz; i++) {
-		struct st_server *srv = servers[i];
-		char *req;
-		int req_sz;
-		buf_get_reader(&srv->send_buf, &req, &req_sz);
-		char *req_end = req + req_sz;
-		while(req_end - req) {
-			int request_sz = MC_GET_REQUEST_SZ(req);
-			
-			char *res_buf;
-			int res_buf_sz;
-			buf_get_writer(&srv->recv_buf, &res_buf, &res_buf_sz, MAX_REQUEST_SIZE);
-			int produced = error_from_reqbuf(req, request_sz,
-							res_buf, res_buf_sz,
-							MEMCACHE_STATUS_INTERNAL_ERROR);
-			
-			buf_produce(&srv->recv_buf, produced);
-
-			
-			req += request_sz;
-		}
-		buf_consume(&srv->send_buf, req_sz);
-		
-		srv->queued_requests = 0;
-	
-	return;
-	}
-*/
 }
 
 
@@ -130,12 +101,13 @@ retry:;
 	
 	errno = 0;
 	int r = recv(srv->sd, buf+srv->recv_offset, buf_sz - srv->recv_offset, MSG_DONTWAIT);
-	if(r < 1) {
-		if(EAGAIN != errno) {
+	if(r <= 0) {
+		if(EAGAIN == errno) {
+			r = 0;
+		} else {
 			log_perror("recv(%s:%i)", srv->host, srv->port);
 			return do_connection_error(uevent, srv, NULL);
 		}
-		r = 0;
 	}
 	buf_produce(&srv->recv_buf, r);
 	if(r == buf_sz - srv->recv_offset)

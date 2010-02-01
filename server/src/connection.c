@@ -63,7 +63,7 @@ retry_recv:;
 	int ret = recv(conn->event.cd, buf, buf_sz, MSG_DONTWAIT);
 	
 	if(ret <= 0) {
-		if(NEVER(errno == EAGAIN)) {
+		if(EAGAIN == errno) {
 			/* just wait for next event */
 			ret = 0;
 		} else {

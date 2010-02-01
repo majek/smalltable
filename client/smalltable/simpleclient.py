@@ -296,10 +296,20 @@ class NetworkConnecton:
             yield _pack(**kwargs)
             opaque += 1
         self.send_iter = x
-        ret = list( self.recv() )[0]
+        ret = self.recv()[0]
         return ret
 
+    def _connection_broken(self, *args):
+        self.sd = None
+        self.send_buffer.flush()
+        self.recv_buffer.flush()
+        self.send_iter = None
+        raise ConnectionClosedError(str(args))
+
     def recv(self):
+        return list(self._recv())
+
+    def _recv(self):
         if not self.sd:
             self.sd = self.new_connection()
 
@@ -315,7 +325,11 @@ class NetworkConnecton:
             group_sz += len( data )
             if group_sz > 65536: # Every 65k try to fill tcp/ip buffers.
                 self.send_buffer.write( ''.join(group) )
-                self.send_buffer.send_to_socket( self.sd )
+                try:
+                    self.send_buffer.send_to_socket( self.sd )
+                except socket.error, (e, msg):
+                    self._connection_broken(e, msg)
+
                 group = []
                 group_sz = 0
         self.send_buffer.write( ''.join(group) )
@@ -335,7 +349,7 @@ class NetworkConnecton:
             if rlist:
                 c = self.recv_buffer.recv_from_socket( self.sd )
                 if c == 0:
-                    raise ConnectionClosedError()
+                    self._connection_broken()
                 while True:
                     buf_len = len(self.recv_buffer)
                     if buf_len >= res_len:

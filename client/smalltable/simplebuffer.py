@@ -103,6 +103,7 @@ class SimpleBuffer:
         except socket.error, (e, msg):
             if e == 11: # errno.EAGAIN
                 return
+            raise
         self.buf.seek(0, os.SEEK_END)
         self.offset += r
         self.size -= r
