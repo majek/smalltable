@@ -38,7 +38,7 @@ test_clean:
 server_tests: smalltable-cov test_clean
 	$(PYTHON) tests/server_runner.py $(PORT)		\
 		"./smalltable-cov -x --port $(PORT) --engine=fs $(FSDIR)" \
-		"SERVERPORT=$(PORT) PYTHONPATH=.:../client \
+		"SERVERPORT=$(PORT) PYTHONPATH=.:./client \
 					$(PYTHON) tests/run.py tests ./tests 'test_*.py'"
 	$(PYTHON) tests/check_server_command_line.py ./smalltable-cov --engine=fs $(FSDIR)
 	@(cd src; for cfile in *.c; do \
@@ -50,13 +50,13 @@ server_tests: smalltable-cov test_clean
 
 
 server_foreground_tests:
-	SERVERPORT=22122 PYTHONPATH=.:../client \
+	SERVERPORT=22122 PYTHONPATH=.:./client \
 					$(PYTHON) tests/run.py tests ./tests 'test_*.py'
 
 proxy_tests: smalltable-proxy-cov test_clean
 	$(PYTHON) tests/server_runner.py $(PORT)		\
 		"./smalltable-proxy-cov -x --port $(PORT) " \
-		"SERVERPORT=$(PORT) PYTHONPATH=.:../client \
+		"SERVERPORT=$(PORT) PYTHONPATH=.:./client \
 					$(PYTHON) tests/run.py tests ./tests 'proxy_*.py'"
 	#$(PYTHON) tests/check_server_command_line.py ./smalltable--cov --engine=fs $(FSDIR)
 	@(cd src; for cfile in *.c; do \
@@ -67,6 +67,6 @@ proxy_tests: smalltable-proxy-cov test_clean
 	@pgrep smalltable-proxy-cov || true
 
 proxy_foreground_tests:
-	SERVERPORT=22122 PYTHONPATH=.:../client \
+	SERVERPORT=22122 PYTHONPATH=.:./client \
 					$(PYTHON) tests/run.py tests ./tests 'proxy_*.py'
 
