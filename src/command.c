@@ -46,8 +46,9 @@ int command_register(int cmd, int user_flags, void *process_ud) {
 }
 
 int command_unregister(int cmd) {
-	if(cmd < 0 || cmd > NELEM(cmd_pointers) || (cmd_pointers[cmd].flags & CMD_FLAG_RO))
+	if(cmd < 0 || cmd > NELEM(cmd_pointers) || (cmd_pointers[cmd].flags & CMD_FLAG_RO)) { // no coverage
 		return(-1);
+	}
 	cmd_pointers[cmd].ptr = NULL;
 	cmd_pointers[cmd].flags = 0;
 	return(0);
@@ -93,7 +94,7 @@ static void try_prefetch(ST_STORAGE_API *api, char *start_req_buf, int start_req
 				first_run = 0;
 			}
 			REQBUF_GET_KEY(req_buf, &b_key[b_sz], &b_key_sz[b_sz]);
-			b_sz++;
+			b_sz += 1;
 			if(unlikely(b_sz == BULK_SZ)) {
 				storage_prefetch(api, b_key, b_key_sz, b_sz);
 				b_sz = 0;

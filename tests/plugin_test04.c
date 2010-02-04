@@ -21,9 +21,28 @@ int process_bytestream(char *request, int request_sz, char *res_buf, int res_buf
 		goto exit;
 	}
 	
+	char *keys[] = {"A"};
+	int key_sz[] = {1};
+	
+	storage_prefetch(NULL, NULL, 0); // clear resources
+	storage_prefetch(keys, key_sz, 1); // do dummy prefetch
+	
+	char val[512]= "kalesony!";
+	char val_sz=0;
+	
+	storage_set(NULL, val, strlen(val), keys[0], key_sz[1]);
+	val_sz = storage_get(NULL, val, sizeof(val), keys[0], key_sz[1]);
+	val[val_sz] = '\0';
+	storage_delete(keys[0], key_sz[1]);
+
+	uint64_t ran = 0;
+	r = st_get_random(&ran, sizeof(ran));
+	printf("r=%i", r);
+	printf("ran=%llx", ran);
+
 	res.status = MEMCACHE_STATUS_OK;
 	res.value = res.buf;
-	res.value_sz = snprintf(res.value, res.buf_sz, "kalesony!");
+	res.value_sz = snprintf(res.value, res.buf_sz, val);
 	
 exit:;
 	return( pack_response(res_buf, res_buf_sz, &res) );

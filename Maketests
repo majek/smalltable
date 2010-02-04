@@ -11,6 +11,22 @@ BLACKLIST=\
 	src/sto_tc.c	\
 	src/rbtree.c
 
+SERVER_FILES=\
+	src/main.c		\
+	src/code_commands.c	\
+	src/command.c		\
+	src/process.c		\
+	src/storage.c		\
+	src/sys_commands.c	\
+	$(COMMON_SERVER_FILES)
+
+COMMON_SERVER_FILES=\
+	src/buffer.c		\
+	src/common.c		\
+	src/connection.c	\
+	src/framing.c		\
+	src/event_loop.c
+
 PROXY_FILES=\
 	src/proxy.c		\
 	src/proxy_client.c	\
@@ -22,13 +38,6 @@ PROXY_FILES=\
 	src/st_server.c		\
 	src/uevent.c
 
-SERVER_FILES=\
-	src/main.c		\
-	src/code_commands.c	\
-	src/command.c		\
-	src/process.c		\
-	src/storage.c		\
-	src/sys_commands.c
 
 FSDIR=data
 
@@ -40,10 +49,11 @@ server_tests: smalltable-cov test_clean
 		"./smalltable-cov -x --port $(PORT) --engine=fs $(FSDIR)" \
 		"SERVERPORT=$(PORT) PYTHONPATH=.:./client \
 					$(PYTHON) tests/run.py tests ./tests 'test_*.py'"
-	$(PYTHON) tests/check_server_command_line.py ./smalltable-cov --engine=fs $(FSDIR)
-	@(cd src; for cfile in *.c; do \
-			gcov -o cov -bc $$cfile >/dev/null 2>/dev/null ; \
-		done; )
+	FSDIR=data $(PYTHON) tests/check_server_command_line.py ./smalltable-cov
+	@(for cfile in src/*.c; do \
+			gcov -o src/cov -bc $$cfile >/dev/null 2>/dev/null; \
+		done;)
+	@mv *gcov src
 	@echo -e "\n***** Coverage C *****"
 	@python gcovst.py "$(BLACKLIST) $(PROXY_FILES)" src
 	@pgrep smalltable-cov || true
@@ -58,10 +68,10 @@ proxy_tests: smalltable-proxy-cov test_clean
 		"./smalltable-proxy-cov -x --port $(PORT) " \
 		"SERVERPORT=$(PORT) PYTHONPATH=.:./client \
 					$(PYTHON) tests/run.py tests ./tests 'proxy_*.py'"
-	#$(PYTHON) tests/check_server_command_line.py ./smalltable--cov --engine=fs $(FSDIR)
-	@(cd src; for cfile in *.c; do \
-			gcov -o cov -bc $$cfile >/dev/null 2>/dev/null ; \
-		done; )
+	@(for cfile in src/*.c; do \
+			gcov -o src/cov -bc $$cfile >/dev/null 2>/dev/null; \
+		done;)
+	@mv *gcov src
 	@echo -e "\n***** Coverage C *****"
 	@python gcovst.py "$(BLACKLIST) $(SERVER_FILES)" src
 	@pgrep smalltable-proxy-cov || true

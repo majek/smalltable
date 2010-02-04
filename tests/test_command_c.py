@@ -1,8 +1,9 @@
 import unittest
 import struct
 from utils import connect
+from utils import simple_connect
 
-from smalltable.binmemcache import OP_GET
+from smalltable.binmemcache import OP_GET, MemcachedItemNotStored
 
 class TestCommand(unittest.TestCase):
     @connect
@@ -26,3 +27,24 @@ class TestCommand(unittest.TestCase):
         r = sd.recv(4096)
         self.assertEqual( r, '' )
 
+
+    @connect
+    def test_unregister(self, mc):
+        c = r'''
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <smalltable.h>
+
+int main(int argc, char **argv) {
+        st_unregister(0x00);
+        return(0);
+}
+'''
+        self.assertRaises(MemcachedItemNotStored,
+                    mc.code_load, c
+                )
+
+    @simple_connect
+    def test_big_prefetch(self, st):
+        st.get_multi(["a"] * 4097)

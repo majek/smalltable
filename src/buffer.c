@@ -71,9 +71,9 @@ static inline void _buf_alloc(struct buffer *b, int min_size) {
 		b->buf_sz += INITIAL_BUF_SIZE;
 		do_realloc = 1;
 	}
-	if(do_realloc)
+	if(do_realloc) {
 		b->buf = (char*)st_realloc(b->buf, b->buf_sz);
-	assert(b->buf);
+	}
 }
 
 static inline void _buf_free(struct buffer *b) {
@@ -97,10 +97,8 @@ void buf_get_writer(struct buffer *buf, char **ubuf_ptr, int *ubuf_sz_ptr, int m
 }
 
 void buf_get_reader(struct buffer *buf, char **ubuf_ptr, int *ubuf_sz_ptr) {
-	if(ubuf_ptr)
-		*ubuf_ptr = &buf->buf[ buf->start_off ];
-	if(ubuf_sz_ptr)
-		*ubuf_sz_ptr = buf->stop_off - buf->start_off;
+	*ubuf_ptr = &buf->buf[ buf->start_off ];
+	*ubuf_sz_ptr = buf->stop_off - buf->start_off;
 }
 
 int buf_get_used(struct buffer *buf) {

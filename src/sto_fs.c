@@ -165,6 +165,10 @@ void fs_sync(void *storage_data) {
 	sync();
 }
 
+static void fs_readahead(void *storage_data, char **keys, int *key_sz, int counter) {
+
+}
+
 int is_dir(char *path) {
 	struct stat st;
 	if(0 != stat(path, &st)) {
@@ -197,6 +201,7 @@ ST_STORAGE_API *storage_fs_create(int argc, char **argv) {
 	api->set = &fs_set;
 	api->del = &fs_del;
 	api->sync = &fs_sync;
+	api->readahead = &fs_readahead;
 	api->storage_data = fsd;
 	return(api);
 }

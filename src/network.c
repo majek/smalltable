@@ -52,16 +52,19 @@ static void net_set_ridiculously_high_buffers(int cd) {
 static void set_nonblocking(int fd) {
 	int flags, ret;
 	flags = fcntl(fd, F_GETFL, 0);
-	if (NEVER(-1 == flags))
+	if(-1 == flags) { // no coverage
 		flags = 0;
+	}
 	ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-	if(NEVER(-1 == ret))
+	if(-1 == ret) { // no coverage
 		log_perror("fcntl()");
+	}
 }
 
 static int net_gethostbyname(char *host, in_addr_t *s_addr) {
-	if(NEVER(!s_addr || !host))
+	if(!s_addr || !host) { // no coverage
 		return(-1);
+	}
 
 	if(strcmp(host, "") == 0 || strcmp(host, "*") == 0 || strcmp(host, "0.0.0.0") == 0) {
 		*s_addr = INADDR_ANY;
@@ -101,14 +104,14 @@ error:
 int net_bind(char *host, int port) {
 	int r;
 	int sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if(NEVER(sd < 0)) {
+	if(sd < 0) { // no coverage
 		log_perror("socket()");
 		return(-1);
 	}
 	
 	int one = 1;
         r = setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(one));
-	if(NEVER(r < 0)) {
+	if(r < 0) { // no coverage
 		log_perror("setsockopt(SO_REUSEADDR)"); // not fatal
 	}
 	
@@ -128,7 +131,7 @@ int net_bind(char *host, int port) {
 	}
 	
 	r = listen(sd, 32);
-	if(NEVER(r < 0)) {
+	if(r < 0) { // never
 		log_perror("listen()");
 		goto error;
 	}

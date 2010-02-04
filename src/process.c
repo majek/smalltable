@@ -77,7 +77,7 @@ void process_free(struct process *process) {
 		command_unregister(cmd);
 		process->registercnt--;
 	}
-	if(NEVER(process->registercnt)) {
+	if(unlikely(process->registercnt)) { // no coverage
 		log_error("reference counter != 0! %i", process->registercnt);
 	}
 	if(process->p) {
@@ -475,7 +475,7 @@ static int do_syscall(CONN *conn, struct process *process) {
 int process_load(struct process *process, char *elf_filename) {
 	vxproc *volatile p = vxproc_alloc();
 	log_warn("#%p started: %s  (owner=%s:%i)", process, process->encoded_key, process->owner_host, process->owner_port);
-	if(NEVER(p == NULL)) {
+	if(p == NULL) {
 		log_perror("#%p vxproc_alloc", process);
 		return(-1);
 	}
@@ -486,7 +486,7 @@ int process_load(struct process *process, char *elf_filename) {
 
 	int r = vxproc_loadelffile(p, elf_filename, argv, environ);
 	r = r;
-	if(NEVER(r < 0)) {
+	if(r < 0) { // no coverage
 		log_perror("#%p vxproc_loadelffile", process);
 		vxproc_free(p);
 		return(-1);

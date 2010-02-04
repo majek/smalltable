@@ -6,7 +6,7 @@ import sys
 import glob
 
 
-gcoverage = [0, 0, 0, 0]
+gcoverage = [0, 0, 0, 0, 0]
 
 
 blacklist=sys.argv[1].split()
@@ -21,10 +21,8 @@ for fname in blacklist:
         if fname in filenames:
             filenames.remove(fname)
 
-#print filenames
-
-print "%-16s %4s %4s %3s %6s %5s %3s     %s" % ('Name', 'Branches', 'Taken', '', 'Lines', 'Exec', '', 'Missing')
-print "----------------------------------------------------------------"
+print "%-16s %7s %5s %4s %2s %6s %4s %4s     %s" % ('Name', 'No cov', 'Branches', 'taken', '', 'Lines', 'exec', '', 'Missing')
+print "----------------------------------------------------------------------"
 for filename in filenames:
     fd = open(filename, 'rb')
 
@@ -34,15 +32,29 @@ for filename in filenames:
 
     lines = []
     badlines = 0
+    cov_braces = 0
+    no_coverage_lines = 0
     for line in fd:
         if line.startswith('call') or line.startswith('function'):
             continue
         if line.startswith('branch'):
+            if no_coverage_lines:
+                continue
             branch_all += 1
             if line.split()[3].strip() in ['0', 'executed']:
                 branch_missed.append(str(lineno))
             else:
                 branch_taken += 1
+            continue
+        if cov_braces:
+            cov_braces = max(0, cov_braces + line.count('{') - line.count('}'))
+            no_coverage_lines += 1
+            #print line.strip()
+            continue
+        if "no coverage" in line or line.endswith(" never"):
+            cov_braces = line.count('{') - line.count('}')
+            no_coverage_lines += 1
+            #print line.strip()
             continue
         runs, lineno, line = line.split(":",2)
         runs = runs.strip()
@@ -75,6 +87,7 @@ for filename in filenames:
     gcoverage[1] += all
     gcoverage[2] += branch_taken
     gcoverage[3] += branch_all
+    gcoverage[4] += no_coverage_lines
     slots = []
     maxdiff = max(map(lambda (a,b):b-a, rets) or [0])
     maxdiff = max(2, maxdiff)
@@ -82,16 +95,19 @@ for filename in filenames:
         s = "%i-%i" % (a,b) if a!=b else '%i' % a
         if b-a == maxdiff: s = "*" + s + "*"
         slots.append(s)
-    print "%-20s %4i %4i %3.0f%% %6i %5i  %3.0f%%   %s " % (filename.rpartition(".")[0], 
+    print "%-20s%3s %4i %4i %3.0f%% %6i %5i  %3.0f%%   %s " % (
+            filename.rpartition(".")[0],
+            no_coverage_lines if no_coverage_lines > 0 else ' ',
             branch_all, branch_taken, branch_cov,
             all, good, coverage, 
             ', '.join(branch_missed) + ' | ' +
             ', '.join(slots))
 
-print "----------------------------------------------------------------"
+print "----------------------------------------------------------------------"
 code_cov = (gcoverage[0]/float(gcoverage[1] or 1)) * 100
 branch_cov = (gcoverage[2]/float(gcoverage[3] or 1)) * 100
-print "%-20s %4i %4i %3.0f%% %6i %5i  %3.0f%%   %s " % ('TOTAL',
+print "%-20s%3i %4i %4i %3.0f%% %6i %5i  %3.0f%%   %s " % ('TOTAL',
+        gcoverage[4],
         gcoverage[3], gcoverage[2], branch_cov,
         gcoverage[1], gcoverage[0], code_cov, '')
 

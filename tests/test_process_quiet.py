@@ -1,5 +1,6 @@
 import unittest
 from utils import connect, new_connection
+from utils import simple_connect
 import re
 from pkg_resources import resource_filename
 from smalltable.binmemcache import OP_NOOP, MemcachedError, MemcachedKeyExistsError, MemcachedInvalidArguments, MemcachedItemNotStored
@@ -15,45 +16,10 @@ def flatten_run_error(mc, c):
 
 
 class TestGlobal(unittest.TestCase):
-    @connect
-    def test03(self, mc):
-        # test quiet process command
-        code = open(resource_filename(__name__, 'plugin_test03.c')).read()
+    @simple_connect
+    def test04(self, mc):
+        code = open(resource_filename(__name__, 'plugin_test04.c')).read()
         x = mc.code_load(code)
-        # command is quiet.
-        sd = mc.servers[0].sd
-        sd.setblocking(False)
-        key = 'a'
-
-        header = struct.pack('!BBHBBHIIQ',
-            0x80, 0x91, len(key),
-            0, 0x00, 0x00,
-            0 + len(key) + 0,
-            0xDEAD,
-            0x00)
-        sd.send(header + key)
-        self.assertRaises(socket.error, sd.recv, 4096)
-
-        header = struct.pack('!BBHBBHIIQ',
-            0x80, 0x91, len(key),
-            0, 0x00, 0x00,
-            0 + len(key) + 0,
-            0xDEAD,
-            0x00)
-        sd.send(header + key)
-        self.assertRaises(socket.error, sd.recv, 4096)
-
-        header = struct.pack('!BBHBBHIIQ',
-            0x80, OP_NOOP, 0,
-            0, 0x00, 0x00,
-            0 + 0 + 0,
-            0xDEAD,
-            0x00)
-        sd.send(header + key)
-        sd.setblocking(True)
-        res = sd.recv(4096)
-        self.assertEqual( res.encode('hex'), '8191000000000000000000090000dead00000000000000006b616c65736f6e79218191000000000000000000090000dead00000000000000006b616c65736f6e7921810a000000000000000000000000dead0000000000000000' )
-
-        mc = new_connection()
+        x = mc._custom_command(opcode=0x91, key="a", value="a")
+        self.assertEqual(x, 'kalesony!')
         mc.code_unload(code)
-        mc.close()

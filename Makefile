@@ -146,10 +146,12 @@ CLEAN_FILES+=src/deps.d
 %.o: src/deps.d
 
 src/deps.d:	$(wildcard src/*c)
-	echo > $@
-	@$(CC) $(COPTS) -MM $^ | sed 's/^\([^:]*\):/src\/\1:/' >> $@
-	@$(CC) $(COPTS) -MM $^ | sed 's/^\([^:]*\):/src\/cov\/\1:/' >> $@
-	@$(CC) $(COPTS) -MM $^ | sed 's/^\([^:]*\):/src\/proc\/\1:/' >> $@
+	@$(CC) $(COPTS) -MM $^ > deps.d
+	@echo > $@
+	@cat deps.d | sed 's/^\([^:]*\):/src\/\1:/' >> $@
+	@cat deps.d | sed 's/^\([^:]*\):/src\/cov\/\1:/' >> $@
+	@cat deps.d | sed 's/^\([^:]*\):/src\/proc\/\1:/' >> $@
+	@rm deps.d
 
 -include src/deps.d
 

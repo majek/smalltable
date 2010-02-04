@@ -10,11 +10,16 @@ suffix = " >/dev/null 2>/dev/null"
 #start_server(port, server_cmd, logname='tests-cmdline.log')
 #stop_server(proc, signo=signal.SIGINT)
 
-os.system(cmd + " --listen an.invalid.host.name.indeed" + suffix)
+os.system(cmd + " --noengine" + suffix)
+os.system(cmd + " --engine brokeneengine" + suffix)
+cmd += ' --engine=fs %s' % (os.getenv('FSDIR'),)
+os.system(cmd + " --help" + suffix)
+os.system(cmd + " --listen an.invalid.host.name.indeed --tmpdir /tmp" + suffix)
 os.system(cmd + " -v --port 65537" + suffix)
 os.system(cmd + " -v --port \\-1" + suffix)
 os.system(cmd + " --wrong-option" + suffix)
 os.system(cmd + " --vx32sdk /tmp " + suffix)
+os.system(cmd + " -g 'badgcccommand' " + suffix)
 
 
 port = random.randint(32768, 65534)
