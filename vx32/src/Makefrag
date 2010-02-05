@@ -10,7 +10,7 @@ HOST_CC		:= $(CC) -fno-inline
 HOST_LD		:= $(LD)
 HOST_AR		:= $(AR)
 HOST_LDFLAGS	:= $(COMMON_LDFLAGS)
-HOST_CFLAGS	:= $(COMMON_CFLAGS)
+HOST_CFLAGS	:= $(COMMON_CFLAGS) -fPIC
 
 # VX32 environment compiler options
 # If you build your own vx32-specific copies of the GNU

@@ -51,7 +51,7 @@ for filename in filenames:
             no_coverage_lines += 1
             #print line.strip()
             continue
-        if "no coverage" in line or line.endswith(" never"):
+        if "no coverage" in line or line.strip().endswith(" never"):
             cov_braces = line.count('{') - line.count('}')
             no_coverage_lines += 1
             #print line.strip()

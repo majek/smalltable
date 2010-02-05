@@ -27,7 +27,7 @@ ADDLIB =
 INC=-Ivx32/src
 LIB=-levent
 
-COPTS_COV=--coverage -DCOVERAGE_TEST 
+COPTS_COV=--coverage -DCOVERAGE_TEST -fPIC
 COPTS_PROF=-pg
 
 LDFLAGS_COV=--coverage
@@ -139,6 +139,8 @@ src/cov/%.o:	src/%.c
 src/prof/%.o:	src/%.c
 	$(CC) $(COPTS) $(COPTS_PROF) -c -o $@ $<
 
+smalltable-cov.so:: $(patsubst src/%, src/cov/%, $(OBJS) $(OPTIONS_OBJS))
+	$(LD) $(LDFLAGS) $(LDFLAGS_COV) -shared -o $@ $^ $(LDOPTS)
 
 CLEAN_FILES+=src/deps.d
 
@@ -169,3 +171,7 @@ smalltable-proxy-cov:: $(patsubst src/%, src/cov/%, $(PROXY_OBJS))
 
 smalltable-proxy-prof:: $(patsubst src/%, src/prof/%, $(PROXY_OBJS))
 	$(LD) $(LDFLAGS) $(LDFLAGS_PROF) -o $@ $^ $(LDOPTS)
+
+smalltable-proxy-cov.so:: $(patsubst src/%, src/cov/%, $(PROXY_OBJS))
+	$(LD) $(LDFLAGS) $(LDFLAGS_COV) -shared -o $@ $^ $(LDOPTS)
+

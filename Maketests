@@ -44,7 +44,7 @@ FSDIR=data
 test_clean:
 	rm -f src/*.c.gcov src/cov/*.gcda
 
-server_tests: smalltable-cov test_clean
+server_tests: smalltable-cov.so smalltable-cov test_clean
 	$(PYTHON) tests/server_runner.py $(PORT)		\
 		"./smalltable-cov -x --port $(PORT) --engine=fs $(FSDIR)" \
 		"SERVERPORT=$(PORT) PYTHONPATH=.:./client \
@@ -63,11 +63,12 @@ server_foreground_tests:
 	SERVERPORT=22122 PYTHONPATH=.:./client \
 					$(PYTHON) tests/run.py tests ./tests 'test_*.py'
 
-proxy_tests: smalltable-proxy-cov test_clean
+proxy_tests: smalltable-proxy-cov.so smalltable-proxy-cov test_clean
 	$(PYTHON) tests/server_runner.py $(PORT)		\
 		"./smalltable-proxy-cov -x --port $(PORT) " \
 		"SERVERPORT=$(PORT) PYTHONPATH=.:./client \
 					$(PYTHON) tests/run.py tests ./tests 'proxy_*.py'"
+	$(PYTHON) tests/check_proxy_command_line.py ./smalltable-proxy-cov
 	@(for cfile in src/*.c; do \
 			gcov -o src/cov -bc $$cfile >/dev/null 2>/dev/null; \
 		done;)

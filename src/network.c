@@ -31,16 +31,17 @@ static void net_set_ridiculously_high_buffers(int cd) {
 		for(i=0; i<10; i++) {
 			int bef;
 			socklen_t size = sizeof(bef);
-			if(getsockopt(cd,SOL_SOCKET, flag, &bef, &size)<0) {
+			if(getsockopt(cd,SOL_SOCKET, flag, &bef, &size)<0) { // never
 				log_perror("getsockopt()");
 				break;
 			}
 			int opt = bef*2;
-			if(setsockopt(cd,SOL_SOCKET, flag, &opt, sizeof(opt))<0)
+			if(setsockopt(cd,SOL_SOCKET, flag, &opt, sizeof(opt))<0) { // never
 				break;
+			}
 			int aft;
  			size = sizeof(aft);
- 			if(getsockopt(cd,SOL_SOCKET, flag, &aft, &size)<0) {
+ 			if(getsockopt(cd,SOL_SOCKET, flag, &aft, &size)<0) { // never
 				break;
 			}
 			if(aft <= bef || aft >= 16777216) // until it increases
@@ -138,7 +139,7 @@ int net_bind(char *host, int port) {
 	
 	int seconds = 30;
 	r = setsockopt(sd, SOL_TCP, TCP_DEFER_ACCEPT, (char *)&seconds, sizeof(seconds));
-	if(r < 0) {
+	if(r < 0) { // never
 		log_perror("setsockopt(TCP_DEFER_ACCEPT)"); // not fatal
 	}
 	
@@ -172,7 +173,7 @@ int net_connect(char *host, int port) {
 	
 	int r;
 	int sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if(-1 == sd) {
+	if(-1 == sd) { // never
 		log_perror("socket()");
 		return(-1);
 	}
@@ -180,12 +181,12 @@ int net_connect(char *host, int port) {
 	
 	int one = 1;
         r = setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(one));
-	if(r < 0) {
+	if(r < 0) { // never
 		log_perror("setsockopt(SO_REUSEADDR)"); // not fatal
 	}
 #ifdef SO_REUSEPORT
 	r = setsockopt(sd, SOL_SOCKET, SO_REUSEPORT, (char *) &one, sizeof(one));
-	if(r < 0) {
+	if(r < 0) { // never
 		log_perror("setsockopt(SO_REUSEPORT)"); // not fatal
 	}
 #endif
@@ -197,7 +198,8 @@ int net_connect(char *host, int port) {
 	sin.sin_port = htons(port);
 	
 	if(-1 == connect(sd, (struct sockaddr *) &sin, sizeof(sin))){
-		if(EINPROGRESS != errno) {
+		/* is non-blocking, so we don't get error at that point yet */
+		if(EINPROGRESS != errno) { // never
 			log_perror("connect(%s:%i)", host, port);
 			return(-1);
 		}
