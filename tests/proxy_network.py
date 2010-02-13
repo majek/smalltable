@@ -37,3 +37,5 @@ class TestGlobal(unittest.TestCase):
         key = 'a' * 257
         self.assertRaises(ConnectionClosedError,
             mc._custom_command, opcode=0x99, key=key, value='b')
+
+from test_network import TestNetworkCTypes

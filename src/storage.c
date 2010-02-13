@@ -28,6 +28,8 @@ int storage_get(ST_STORAGE_API *api, MC_METADATA *md, char *value, int value_sz,
 }
 
 int storage_set(ST_STORAGE_API *api, MC_METADATA *md, char *value, int value_sz, char *key, int key_sz) {
+	if(0 >= key_sz)
+		return -1;
 	/* assumption -> more free space after value, see __reserved_for_cas */
 	char prev[sizeof(MC_METADATA)];
 	
@@ -60,5 +62,11 @@ void storage_sync(ST_STORAGE_API *api) {
 void storage_prefetch(ST_STORAGE_API *api, char **keys, int *key_sz, int items_counter) {
 	if(api->readahead)
 		api->readahead(api->storage_data, keys, key_sz, items_counter);
+}
+
+int storage_get_keys(ST_STORAGE_API *api, char *buf, int buf_sz, char *key, int key_sz) {
+	if(api->get_keys)
+		return api->get_keys(api->storage_data, buf, buf_sz, key, key_sz);
+	return -1;
 }
 

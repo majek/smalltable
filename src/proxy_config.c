@@ -9,59 +9,6 @@
 #define MAX_CONFIG_LINES 1024
 
 
-char *encode_hex(char *key, int key_sz) {
-	const char int_to_hex[] = "0123456789ABCDEF";
-	static char hex[512 + 2];
-	if(NEVER(key_sz > 256)) {
-		log_error("broken key_sz %i", key_sz);
-		key_sz = 256;
-	}
-	char *p = hex;
-	while(key_sz) {
-		*p++ = int_to_hex[((*key) >> 4) & 0xF];
-		*p++ = int_to_hex[(*key) & 0xF] ;
-		
-		key++;
-		key_sz--;
-	}
-	*p = '\0';
-	return(hex);
-}
-
-int decode_hex(char **key_ptr, int *key_sz_ptr, char *hex) {
-	const int hex_to_int[256] = { ['0'] 0,   ['1'] 1,   ['2'] 2,   ['3'] 3,
-				['4'] 4,   ['5'] 5,   ['6'] 6,   ['7'] 7,
-				['8'] 8,   ['9'] 9,   ['A'] 10,  ['B'] 11,
-				['C'] 12,  ['D'] 13,  ['E'] 14,  ['F'] 15 };
-	static char start_key[256];
-	char *key = start_key;
-	char *end_key = key + sizeof(key);
-	
-	if(hex == NULL) {
-		*key_sz_ptr = 0;
-		return(0);
-	}
-	
-	while(*hex && *(hex+1)) {
-		if(key >= end_key) {
-			return(-1);
-		}
-		int a = hex_to_int[(int)*(hex+0)];
-		int b = hex_to_int[(int)*(hex+1)];
-		if((a == 0 && *(hex+0) != '0') || (b == 0 && *(hex+1) != '0')) {
-			return(-1);
-		}
-		*key++ = (a << 4) | b;
-		hex += 2;
-	}
-	if(*hex) {
-		return(-1);
-	}
-	*key_ptr = start_key;
-	*key_sz_ptr = key - start_key;
-	return(0);
-}
-
 /* Tokenize line into many small pieces separated by any of sep_chars. On
    occurrence of quit_char stop tokenizing. */
 int split_line(char *argv[], int argv_sz, char *line, char *sep_chars, char *quit_chars) {

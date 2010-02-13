@@ -34,6 +34,7 @@ struct cmd_pointers cmd_pointers[256] = {
 	PROCESS_CMD(MEMCACHE_XCMD_CODE_LOAD, &cmd_code_load, 0),
 	PROCESS_CMD(MEMCACHE_XCMD_CODE_UNLOAD, &cmd_code_unload, 0),
 	PROCESS_CMD(MEMCACHE_XCMD_CODE_CHECK, &cmd_code_check, 0),
+	SYSTEM_CMD(MEMCACHE_XCMD_GET_KEYS, &cmd_get_keys, 0),
 };
 
 int command_register(int cmd, int user_flags, void *process_ud) {

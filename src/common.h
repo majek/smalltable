@@ -1,3 +1,5 @@
+#ifndef _COMMON_H
+#define _COMMON_H
 
 #define SWAP(a,b)		\
 	do{			\
@@ -19,6 +21,10 @@
 
 
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+#ifndef PACKED
+#define PACKED __attribute__ ((packed))
+#endif
 
 #define _NANO 1000000000LL
 #define _MICRO 1000000LL
@@ -57,5 +63,13 @@ unsigned long hash_djb2(char *s);
 unsigned long hash_kr(char *p);
 unsigned long hash_sum(char *str);
 int key_escape(char *dst, int dst_sz, char *key, int key_sz);
+int key_unescape(char *src, char *key, int key_sz);
 
+int is_dir(char *path);
+int get_fd_size(int fd, u_int64_t *size);
 char *read_full_file(char *filename);
+
+char *encode_hex(char *key, int key_sz);
+int decode_hex(char **key_ptr, int *key_sz_ptr, char *hex);
+
+#endif // _COMMON_H

@@ -8,4 +8,5 @@ ST_RES *cmd_set(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res);
 ST_RES *cmd_delete(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res);
 ST_RES *cmd_noop(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res);
 ST_RES *cmd_version(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res);
+ST_RES *cmd_get_keys(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res);
 

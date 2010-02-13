@@ -1,5 +1,5 @@
 import unittest
-from utils import connect
+from utils import connect, simple_connect
 import cPickle as pickle
 
 from smalltable.binmemcache import OP_GET, OP_SET, OP_REPLACE, OP_DELETE, OP_NOOP, OP_VERSION, \
@@ -75,3 +75,25 @@ class TestGlobal(unittest.TestCase):
         self.assertRaises(MemcachedInvalidArguments,
                 lambda :mc.custom_command(opcode=OP_VERSION, key='a'),
             )
+
+    @simple_connect
+    def test_get_keys(self, mc):
+        mc.delete('a')
+        keys = ['%c' % (i,) for i in range(ord('a'), ord('z')+1)]
+        for key in keys:
+            mc.set(key, '1')
+        got_keys = list(mc.get_keys())
+        g_keys = [k for i_cas, k in got_keys]
+        diff = set(g_keys).symmetric_difference( keys )
+        self.assertEqual(len(diff), 0, "diff=%r" % (diff,))
+        i_cas = list(set([i_cas for i_cas, k in got_keys]))
+        self.assertEqual(len(i_cas), len(got_keys), "i_cas repeated %i != %i" % (len(i_cas), len(got_keys)))
+        
+        got_keys = mc._get_keys('t')
+        g_keys = sorted([k for i_cas, k in got_keys])
+        self.assertEqual(g_keys, ['u', 'v', 'w', 'x', 'y', 'z'])
+        
+        
+        for key in keys:
+            mc.delete(key)
+

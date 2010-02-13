@@ -21,7 +21,7 @@ struct uevent {
 	
 };
 
-enum{
+enum {
 	UEVENT_WRITE	= 1 << 0,
 	UEVENT_READ	= 1 << 1
 };

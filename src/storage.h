@@ -14,6 +14,7 @@ struct st_storage_api {
 	int (*del)(void *storage_data, char *key, int key_sz);
 	void (*sync)(void *storage_data);
 	void (*readahead)(void *storage_data, char **keys, int *key_sz, int items_counter);
+	int (*get_keys)(void *storage_data, char *buf, int buf_sz, char *key, int key_sz);
 	void *storage_data;
 };
 typedef struct st_storage_api ST_STORAGE_API;
@@ -24,6 +25,7 @@ int storage_set(ST_STORAGE_API *api, MC_METADATA *md, char *value, int value_sz,
 int storage_delete(ST_STORAGE_API *api, char *key, int key_sz);
 void storage_prefetch(ST_STORAGE_API *api, char **keys, int *key_sz, int items_counter);
 void storage_sync(ST_STORAGE_API *api);
+int storage_get_keys(ST_STORAGE_API *api, char *buf, int buf_sz, char *key, int key_sz);
 
 
 

@@ -73,7 +73,7 @@ OP_STAT = 0x10
 #OP_DELETEQ = 0x14
 #OP_INCREMENTQ = 0x15
 #OP_DECREMENTQ = 0x16
-#OP_QUITQ = 0x17       # you have to be fucked up to think of QUITQ
+#OP_QUITQ = 0x17       # someone is fucked up to think about QUITQ
 #OP_FLUSHQ = 0x18
 #OP_APPENDQ = 0x19
 #OP_PREPENDQ = 0x1A
@@ -81,6 +81,7 @@ OP_STAT = 0x10
 OP_CODE_LOAD = 0x70
 OP_CODE_UNLOAD = 0x71
 OP_CODE_CHECK = 0x72
+OP_GET_KEYS = 0x73
 
 
 STATUS_NO_ERROR = 0x0000
@@ -453,6 +454,31 @@ class Client:
         if r_status is not STATUS_NO_ERROR:
             raise status_exceptions[r_status](value=r_value)
         return r_value
+
+    def _get_keys(self, key):
+        r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
+                            self.conn.single_cmd(opcode=OP_GET_KEYS, key=key)
+        if r_status is STATUS_NO_ERROR:
+            v = r_value
+            i = 0
+            while i < len(v):
+                i_cas, key_sz = struct.unpack_from("@QB", v, i)
+                key = v[i+9:i+9+key_sz]
+                i += 9 + key_sz
+                yield i_cas, key
+            return
+        raise status_exceptions[r_status](value=r_value)
+
+    def get_keys(self):
+        key = ''
+        while True:
+            was = False
+            for i_cas, key in self._get_keys(key):
+                yield i_cas, key
+                was = True
+            if was == False:
+                break
+
 
 def code_loader(filename):
     def decor(fun):

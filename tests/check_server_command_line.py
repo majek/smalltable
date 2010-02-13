@@ -15,7 +15,6 @@ os.system(cmd + " --engine brokeneengine" + suffix)
 cmd += ' --engine=fs %s' % (os.getenv('FSDIR'),)
 os.system(cmd + " --help" + suffix)
 os.system(cmd + " --listen an.invalid.host.name.indeed --tmpdir /tmp" + suffix)
-os.system(cmd + " --listen  google.com" + suffix) # test resolver
 os.system(cmd + " -v --port 65537" + suffix)
 os.system(cmd + " -v --port \\-1" + suffix)
 os.system(cmd + " --wrong-option" + suffix)

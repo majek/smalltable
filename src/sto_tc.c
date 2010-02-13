@@ -48,6 +48,22 @@ void tc_sync(void *storage_data) {
 	tchdbsync(tcd->hdb);
 }
 
+/*
+// Not able to get reasonable metadata from tc.
+static int tc_get_keys(void *storage_data, ) {
+	TC_DATA *tcd = (TC_DATA *)storage_data;
+	tchdbiterinit(tcd->hdb);
+	while(1) {
+		int key_sz;
+		char *key;
+		key = tchdbiternext(tcd->hdb, &key_sz);
+		if(NULL == key) {
+			break;
+		}
+		//value = tchdbget3(hdb, key);
+	}
+}
+*/
 
 ST_STORAGE_API *storage_tc_create(int argc, char **argv) {
 	if(argc < 1)

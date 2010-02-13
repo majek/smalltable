@@ -22,6 +22,7 @@ to pass a QUIET flag. */
 #define MEMCACHE_XCMD_CODE_LOAD		0x70 //   Load code
 #define MEMCACHE_XCMD_CODE_UNLOAD	0x71 //   Unload code
 #define MEMCACHE_XCMD_CODE_CHECK	0x72 //   Check code version
+#define MEMCACHE_XCMD_GET_KEYS		0x73 //   Get list of keys
 
 
 #define PROXY_CMD_GET_CONFIG		0x01

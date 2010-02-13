@@ -90,6 +90,7 @@ int process_test_str(struct config *config, char *value, int value_sz, char *key
 		return(-1);
 	}
 	struct process *process = process_new(NULL, keyprefix, strlen(keyprefix));
+	log_warn("#%p: loaded code from str", process);
 	r = process_load(process, elf_file);
 	if(0 != r) {
 		process_free(process);
@@ -146,8 +147,9 @@ ST_RES *cmd_code_load(CONN *conn, ST_REQ *req, ST_RES *res) {
 	res->value[res->value_sz++] = '\n';
 	
 	struct process *process = process_new(conn, req->key, req->key_sz);
+	log_warn("#%p: loaded code", process);
 	r = process_load(process, elf_file);
-	if(NEVER(0 != r)) {
+	if(0 != r) { // never
 		process_free(process);
 		res->value_sz += snprintf(&res->value[res->value_sz], res->buf_sz - res->value_sz, "Error while loading the binary");
 		res->status = MEMCACHE_STATUS_ITEM_NOT_STORED;

@@ -55,6 +55,7 @@ void process_destroy() {
 
 struct process *process_new(CONN *conn, char *key, int key_sz) {
 	struct process *process = (struct process *)st_calloc(1, sizeof(struct process));
+	log_warn("#%p: process new", process);
 	process->key = (char*)st_malloc(key_sz);
 	process->key_sz = key_sz;
 	memcpy(process->key, key, key_sz);
@@ -78,7 +79,7 @@ void process_free(struct process *process) {
 		process->registercnt--;
 	}
 	if(unlikely(process->registercnt)) { // no coverage
-		log_error("reference counter != 0! %i", process->registercnt);
+		log_error("reference counter != 0! %i %p", process->registercnt, process);
 	}
 	if(process->p) {
 		vxproc_free(process->p);
@@ -89,6 +90,7 @@ void process_free(struct process *process) {
 	free(process->owner_host);
 	free(process->encoded_key);
 	free(process);
+	log_warn("#%p: stopped", process);
 }
 
 void process_commands_callback(CONN *conn, char *req_buf, int req_buf_sz, struct buffer *send_buf, int cmd_flags, void *cmd_ptr) {
@@ -229,12 +231,13 @@ int syscall_register(CONN *conn, struct process *process, vxproc *proc, vxmmap *
 	int xflags;
 	void *process_ud;
 	command_get(cmd, &xflags, &process_ud);
-	if(process_ud && process_ud != process) {
-		struct process *looser = (struct process*)process_ud;
-		looser->registercnt--;
-		if(0 == looser->registercnt) {
+	struct process *looser = (struct process*)process_ud;
+	if(looser && looser != process) {
+		if(1 == looser->registercnt) {
 			log_info("#%p: unused - killing", looser);
 			process_free(looser);
+		} else {
+			looser->registercnt--;
 		}
 	}
 	
@@ -362,7 +365,13 @@ int syscall_st_prefetch(CONN *conn, struct process *process, vxproc *proc, vxmma
 		int i;
 		/* fix key pointers */
 		for(i=0; i < items_counter; i++) {
-			keys[i] = (char*)m->base + (long)keys[i];
+			uint32_t addr = keys[i];
+			if(!vxmem_checkperm(proc->mem, addr, keys_sz[i], VXPERM_READ, NULL)) {
+				log_error("bad param");
+				return(-EINVAL);
+			}
+			char *key = (char*)m->base + addr;
+			keys[i] = key;
 		}
 		api->readahead(api->storage_data, keys, keys_sz, items_counter);
 		/* clear pointers */
@@ -380,7 +389,7 @@ int syscall_st_set(CONN *conn, struct process *process, vxproc *proc, vxmmap *m,
 	int value_sz = arg2;
 	uint32_t key_addr = arg3;
 	int key_sz = arg4;
-	if(value_sz < 0 || key_sz < 0)
+	if(value_sz < 0 || key_sz <= 0)
 		return(-EINVAL);
 	if(!vxmem_checkperm(proc->mem, value_addr, value_sz, VXPERM_READ, NULL))
 		return(-EINVAL);

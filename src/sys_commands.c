@@ -208,3 +208,26 @@ ST_RES *cmd_version(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 	res->status = MEMCACHE_STATUS_OK;
 	return(res);
 }
+
+
+/*
+   Request:
+      MUST NOT have extras.
+      MAY have key.
+      MUST NOT have value.
+*/
+ST_RES *cmd_get_keys(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
+	if(req->extras_sz || req->value_sz)
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
+
+	int ret = storage_get_keys(api, res->buf, res->buf_sz, req->key, req->key_sz);
+	if(ret < 0)
+		return(set_error_code(res, MEMCACHE_STATUS_INTERNAL_ERROR,
+						"Command not supported"));
+
+	res->value = res->buf;
+	res->value_sz = ret;
+	res->status = MEMCACHE_STATUS_OK;
+	return(res);
+}
+
