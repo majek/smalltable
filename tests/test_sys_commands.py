@@ -88,12 +88,11 @@ class TestGlobal(unittest.TestCase):
         self.assertEqual(len(diff), 0, "diff=%r" % (diff,))
         i_cas = list(set([i_cas for i_cas, k in got_keys]))
         self.assertEqual(len(i_cas), len(got_keys), "i_cas repeated %i != %i" % (len(i_cas), len(got_keys)))
-        
-        got_keys = mc._get_keys('t')
-        g_keys = sorted([k for i_cas, k in got_keys])
-        self.assertEqual(g_keys, ['u', 'v', 'w', 'x', 'y', 'z'])
-        
-        
+
+        got_keys2 = list(mc._get_keys(g_keys[-5]))
+        g_keys2 = [k for i_cas, k in got_keys2]
+        self.assertEqual(g_keys2, g_keys[-5+1:])
+
         for key in keys:
             mc.delete(key)
 
