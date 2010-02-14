@@ -1,5 +1,6 @@
 #include <sys/select.h>
 #include <string.h>
+#include <sys/types.h>
 #include <errno.h>
 
 #include "uevent.h"

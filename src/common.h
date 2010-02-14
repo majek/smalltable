@@ -66,7 +66,7 @@ int key_escape(char *dst, int dst_sz, char *key, int key_sz);
 int key_unescape(char *src, char *key, int key_sz);
 
 int is_dir(char *path);
-int get_fd_size(int fd, u_int64_t *size);
+int fd_size(int fd, u_int64_t *size);
 char *read_full_file(char *filename);
 
 char *encode_hex(char *key, int key_sz);

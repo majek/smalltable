@@ -233,22 +233,23 @@ int save_config(struct config *config) {
 		log_error("Can't write to config file \"%s\".", config->config_path_new);
 		return(-1);
 	}
-	struct buffer write_buf;
-	char *buf;
-	int buf_sz;
-	buf_get_writer(&write_buf, &buf, &buf_sz, 1*1024*1024);
+	char *buf = (char*)malloc(1*1024*1024);
+	int buf_sz = 1*1024*1024;
 	int r = config_to_string(config, buf, buf_sz);
 	if(r < 0)
 		goto error;
 	buf[buf_sz] = '\0';
 	fputs(buf, fd);
 	
-	buf_free(&write_buf);
+	free(buf);
 	fclose(fd);
+	if(0 != rename(config->config_path_new, config->config_path)) {
+		log_perror("rename(%s, %s)", config->config_path_new, config->config_path);
+	}
 	return(0);
 	
 error:;
-	buf_free(&write_buf);
+	free(buf);
 	fclose(fd);
 	log_error("Can't write to config file \"%s\".", config->config_path_new);
 	return(-1);

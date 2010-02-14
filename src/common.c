@@ -122,7 +122,9 @@ int key_escape(char *dst, int dst_sz, char *key, int key_sz){
 const int hex_to_int[256] = { ['0'] 0,   ['1'] 1,   ['2'] 2,   ['3'] 3,
 			['4'] 4,   ['5'] 5,   ['6'] 6,   ['7'] 7,
 			['8'] 8,   ['9'] 9,   ['A'] 10,  ['B'] 11,
-			['C'] 12,  ['D'] 13,  ['E'] 14,  ['F'] 15 };
+			['C'] 12,  ['D'] 13,  ['E'] 14,  ['F'] 15,
+					      ['a'] 10,  ['b'] 11,
+			['c'] 12,  ['d'] 13,  ['e'] 14,  ['f'] 15};
 
 int key_unescape(char *src, char *key, int key_sz) {
 	int i = 0;
@@ -160,7 +162,7 @@ int is_dir(char *path) {
 	return(1);
 }
 
-int get_fd_size(int fd, u_int64_t *size) {
+int fd_size(int fd, u_int64_t *size) {
 	struct stat st;
 	if(fstat(fd, &st) != 0){ // never
 		log_perror("stat()");
@@ -178,7 +180,7 @@ char *read_full_file(char *filename) {
 		return(NULL);
 	
 	u_int64_t file_size;
-	if(-1 == get_fd_size(fd, &file_size)) { // never
+	if(-1 == fd_size(fd, &file_size)) { // never
 		goto error;
 	}
 	char *buf = (char*)malloc(file_size);
@@ -218,7 +220,7 @@ char *encode_hex(char *key, int key_sz) {
 int decode_hex(char **key_ptr, int *key_sz_ptr, char *hex) {
 	static char start_key[256];
 	char *key = start_key;
-	char *end_key = key + sizeof(key);
+	char *end_key = key + sizeof(start_key);
 	
 	if(hex == NULL) {
 		*key_sz_ptr = 0;
@@ -227,17 +229,20 @@ int decode_hex(char **key_ptr, int *key_sz_ptr, char *hex) {
 	
 	while(*hex && *(hex+1)) {
 		if(key >= end_key) {
+			log_error("x");
 			return(-1);
 		}
 		int a = hex_to_int[(int)*(hex+0)];
 		int b = hex_to_int[(int)*(hex+1)];
 		if((a == 0 && *(hex+0) != '0') || (b == 0 && *(hex+1) != '0')) {
+			log_error("x %i %c, %i %c", a, *hex, b, *(hex+1));
 			return(-1);
 		}
 		*key++ = (a << 4) | b;
 		hex += 2;
 	}
 	if(*hex) {
+		log_error("x");
 		return(-1);
 	}
 	*key_ptr = start_key;

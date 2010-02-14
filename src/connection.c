@@ -46,14 +46,19 @@ void conn_free(CONN *conn) {
 
 void conn_close(CONN *conn) {
 	log_info("%s:%i closed", conn->host, conn->port);
+	if(conn->server->stopped && conn->event.flag_registered) {
+		log_warn("%s:%i requested stop. resuming", conn->host, conn->port);
+		conn_start(conn->server);
+	}
 	conn_free(conn);
 }
 
 
 /* Read data from socket, run process_multi() once enough data is collected. */
 void conn_recv(CONN *conn) {
-	if(NEVER(unlikely(conn->server->trace)))
+	if(unlikely(conn->server->trace)) { // never
 		log_debug("%s:%i event:recv", conn->host, conn->port);
+	}
 retry_recv:;
 	char *buf;
 	int buf_sz;
@@ -67,7 +72,7 @@ retry_recv:;
 			/* just wait for next event */
 			ret = 0;
 		} else {
-			if(NEVER(ret < 0)) {
+			if(ret < 0) { // never
 				log_perror("%s:%i recv()", conn->host, conn->port);
 			} else {
 				/* Normal close. */
@@ -135,8 +140,9 @@ swallow_next_request:;
 }
 
 void conn_send(CONN *conn) {
-	if(NEVER(unlikely(conn->server->trace)))
+	if(unlikely(conn->server->trace)) { // never
 		log_debug("%s:%i event:send", conn->host, conn->port);
+	}
 	char *buf;
 	int buf_sz = 0;
 	buf_get_reader(&conn->send_buf, &buf, &buf_sz);
@@ -146,7 +152,7 @@ void conn_send(CONN *conn) {
 		errno = 0;
 		ret = send(conn->event.cd, buf, buf_sz, MSG_DONTWAIT);
 		if(ret <= 0) {
-			if(NEVER(errno == EAGAIN)) {
+			if(errno == EAGAIN) { // never
 				/* Impossible to send ATM. Weird. */
 				log_debug("%s:%i write() = EAGAIN", conn->host, conn->port);
 				ret = 0;

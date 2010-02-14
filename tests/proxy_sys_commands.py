@@ -40,7 +40,7 @@ server\t127.0.0.4:11222, 10, DADE
         self.assertRaises(MemcachedKeyNotFoundError, mc._custom_command,
             opcode=PROXY_CMD_SET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND, value=new)
 
-        
+
         mc._custom_command(opcode=PROXY_CMD_STOP, reserved=RESERVED_FLAG_PROXY_COMMAND)
         mc._custom_command(opcode=PROXY_CMD_SET_CONFIG, reserved=RESERVED_FLAG_PROXY_COMMAND, value=new)
         mc._custom_command(opcode=PROXY_CMD_START, reserved=RESERVED_FLAG_PROXY_COMMAND)

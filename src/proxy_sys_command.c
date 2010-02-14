@@ -8,6 +8,7 @@ static ST_RES *cmd_get_config(CONN *conn, ST_REQ *req, ST_RES *res);
 static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res);
 static ST_RES *cmd_stop(CONN *conn, ST_REQ *req, ST_RES *res);
 static ST_RES *cmd_start(CONN *conn, ST_REQ *req, ST_RES *res);
+static ST_RES *cmd_noop(CONN *conn, ST_REQ *req, ST_RES *res);
 
 
 typedef ST_RES* (*system_cmd_t)(CONN *conn, ST_REQ *req, ST_RES *res);
@@ -18,7 +19,8 @@ struct {
 	[PROXY_CMD_GET_CONFIG]		{&cmd_get_config},
 	[PROXY_CMD_SET_CONFIG]		{&cmd_set_config},
 	[PROXY_CMD_STOP]		{&cmd_stop},
-	[PROXY_CMD_START]		{&cmd_start}
+	[PROXY_CMD_START]		{&cmd_start},
+	[MEMCACHE_CMD_NOOP]		{&cmd_noop}
 };
 
 
@@ -89,11 +91,14 @@ static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(err) {
 		res->value = res->buf;
 		strncpy(res->value, err, res->buf_sz);
+		res->value_sz = strlen(res->value);
 		res->status = MEMCACHE_STATUS_ITEM_NOT_STORED;
+		free(buf);
 		return(res);
 	}
 	
 	if(!conn->server->stopped) {
+		free(buf);
 		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, "not stopped"));
 	}
 
@@ -108,7 +113,13 @@ static ST_RES *cmd_set_config(CONN *conn, ST_REQ *req, ST_RES *res) {
 		fatal("Lost previous config. Don't know what to do.");
 	}
 	
+	if(0 != save_config(config)) {
+		log_error("Failed to save config.");
+	}
+	log_error("Saved config.");
+	
 	res->status = MEMCACHE_STATUS_OK;
+	free(buf);
 	return(res);
 }
 
@@ -132,3 +143,9 @@ static ST_RES *cmd_start(CONN *conn, ST_REQ *req, ST_RES *res) {
 	return(res);
 }
 
+static ST_RES *cmd_noop(CONN *conn, ST_REQ *req, ST_RES *res) {
+	if(req->extras_sz || req->key_sz || req->value_sz)
+		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
+	res->status = MEMCACHE_STATUS_OK;
+	return(res);
+}

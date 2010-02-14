@@ -13,10 +13,12 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 	
 	struct config *config = (struct config*)conn->server->userdata;
 	
-	struct st_server *servers[MAX_SERVERS];
+	// TODO: static?
+	static struct st_server *servers[MAX_SERVERS];
 	int servers_no = 0;
 	
-	struct st_server *order[MAX_QUIET_REQUESTS];
+	// TODO: static?
+	static struct st_server *order[MAX_QUIET_REQUESTS];
 	int requests = 0;
 	while(end_req_buf - req_buf) {
 		int request_sz = MC_GET_REQUEST_SZ(req_buf);
@@ -36,6 +38,7 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 			REQBUF_GET_KEY(req_buf, &key, &key_sz);
 			struct st_server *srv = find_st_server(config,
 								key, key_sz);
+			assert( NULL != srv );
 			char *dst;
 			int dst_sz;
 			buf_get_writer(&srv->send_buf, &dst, &dst_sz, request_sz);

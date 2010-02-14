@@ -229,8 +229,8 @@ class NetworkConnecton:
     RESTART_DELAY_MIN = 0.1
     RESTART_DELAY_MAX = 3.0
 
-    def __init__(self, server_addr):
-        host, port = server_addr.split(':', 1)
+    def __init__(self, server_addr, restart_delay_max=None):
+        host, _, port = server_addr.partition(':')
         if not port:
             port = DEFAULT_PORT
         else:
@@ -240,6 +240,7 @@ class NetworkConnecton:
         self.send_buffer = simplebuffer.SimpleBuffer()
         self.recv_buffer = simplebuffer.SimpleBuffer()
         self.opaque = random.randint(0, 65535)
+        self.restart_delay_max = restart_delay_max or self.RESTART_DELAY_MAX
 
     def _new_connection(self):
         sd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -261,18 +262,23 @@ class NetworkConnecton:
         slept = 0.0
 
         while True:
+            self.send_buffer.flush()
+            self.recv_buffer.flush()
             try:
                 return self._new_connection()
             except ConnectionError, e:
                 log.debug('ConnectionError, retrying: %r %r' % (self.address, e))
-                self.send_buffer.flush()
-                self.recv_buffer.flush()
                 slept += delay
-                if slept > self.RESTART_DELAY_MAX:
+                if slept > self.restart_delay_max:
                     log.error('ConnectionError, fatal: %r %r' % (self.address, e,))
                     raise ConnectionError((self.address, e))
                 time.sleep(delay)
                 delay *= 2
+
+    def close(self):
+        if self.sd:
+            self.sd.close()
+            self.sd = None
 
     def send_with_noop(self, requests_iter):
         def x(opaque):
@@ -305,10 +311,15 @@ class NetworkConnecton:
         self.send_buffer.flush()
         self.recv_buffer.flush()
         self.send_iter = None
+        print "a"
         raise ConnectionClosedError(str(args))
 
     def recv(self):
-        return list(self._recv())
+        try:
+            return list(self._recv())
+        except socket.error, (e, msg):
+            print "XXX"
+            self._connection_broken(e, msg)
 
     def _recv(self):
         if not self.sd:
@@ -326,10 +337,7 @@ class NetworkConnecton:
             group_sz += len( data )
             if group_sz > 65536: # Every 65k try to fill tcp/ip buffers.
                 self.send_buffer.write( ''.join(group) )
-                try:
-                    self.send_buffer.send_to_socket( self.sd )
-                except socket.error, (e, msg):
-                    self._connection_broken(e, msg)
+                self.send_buffer.send_to_socket( self.sd )
 
                 group = []
                 group_sz = 0
@@ -376,8 +384,11 @@ class Client:
     server_addr = None
     conn = None
 
-    def __init__(self, server_addr):
-        self.conn = NetworkConnecton( server_addr )
+    def __init__(self, *args, **kwargs):
+        self.conn = NetworkConnecton( *args, **kwargs )
+
+    def close(self):
+        self.conn.close()
 
     def get_multi(self, keys, default=None):
         self.conn.send_with_noop( {'opcode':OP_GET, 'key':key, 'reserved':RESERVED_FLAG_QUIET}  for key in keys )
@@ -479,6 +490,9 @@ class Client:
             if was == False:
                 break
 
+    def noop(self):
+        return self._custom_command(opcode=OP_NOOP)
+
 
 def code_loader(filename):
     def decor(fun):
@@ -509,6 +523,24 @@ class IncrClient(Client):
 
     def decr(self, key, amount=1, initial=0x0, expiration=0x0):
         return self._do_incr(OP_DECREMENT, key, amount, initial, expiration)
+
+
+class ProxyClient(Client):
+    def get_config(self):
+        return self._custom_command(opcode=PROXY_CMD_GET_CONFIG,
+                                    reserved=RESERVED_FLAG_PROXY_COMMAND)
+
+    def set_config(self, config):
+        return self._custom_command(opcode=PROXY_CMD_SET_CONFIG,
+                                    reserved=RESERVED_FLAG_PROXY_COMMAND,
+                                    value=config)
+    def stop(self):
+        return self._custom_command(opcode=PROXY_CMD_STOP,
+                                    reserved=RESERVED_FLAG_PROXY_COMMAND)
+
+    def start(self):
+        return self._custom_command(opcode=PROXY_CMD_START,
+                                    reserved=RESERVED_FLAG_PROXY_COMMAND)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 #define _GNU_SOURCE // for O_NOATIME
+#define _BSD_SOURCE // nsec for stat
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -75,7 +76,7 @@ int fs_get(void *storage_data, char *dst, int size, char *key, int key_sz){
 		return(-1);
 	
 	u_int64_t file_size;
-	if(-1 == get_fd_size(fd, &file_size))
+	if(-1 == fd_size(fd, &file_size))
 		return(-1);
 	if(size < file_size) /* buffer too small */
 		return(-1);
@@ -105,7 +106,7 @@ int fs_set(void *storage_data, char *value, int value_sz, char *key, int key_sz)
 	char path_new[MAX_FULLPATH + 4 ];
 	snprintf(path_new, sizeof(path_new), "%s.new", path);
 	
-	int fd = open(path_new, O_WRONLY|O_TRUNC|O_CREAT|O_NOATIME, S_IRUSR|S_IWUSR);
+	int fd = open(path_new, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
 	if(fd == -1 && errno == ENOENT) {
 		int a, b;
 		key_to_filename(key, key_sz, &a, &b);
@@ -113,15 +114,22 @@ int fs_set(void *storage_data, char *value, int value_sz, char *key, int key_sz)
 		char dir2[MAX_DIRNAME+4+4];
 		snprintf(dir1, sizeof(dir1), "%s/%03i", fsd->dir, a);
 		snprintf(dir2, sizeof(dir2), "%s/%03i/%03i", fsd->dir, a, b);
-		if(mkdir(dir1, S_IRWXU) != 0 && errno != EEXIST) {
-			perror("mkdir()");
-			return(-1);
-		}
 		if(mkdir(dir2, S_IRWXU) != 0 && errno != EEXIST) {
-			perror("mkdir()");
-			return(-1);
+			if(errno == ENOENT) {
+				if(mkdir(dir1, S_IRWXU) != 0 && errno != EEXIST) {
+					perror("mkdir()");
+					return(-1);
+				}
+				if(mkdir(dir2, S_IRWXU) != 0 && errno != EEXIST) {
+					perror("mkdir()");
+					return(-1);
+				}
+			} else {
+				perror("mkdir()");
+				return(-1);
+			}
 		}
-		fd = open(path_new, O_WRONLY|O_TRUNC|O_CREAT|O_NOATIME, S_IRUSR|S_IWUSR);
+		fd = open(path_new, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
 	}
 	if(fd == -1) {
 		perror("open()");
@@ -132,7 +140,7 @@ int fs_set(void *storage_data, char *value, int value_sz, char *key, int key_sz)
 	while(written != value_sz){
 		int ret = write(fd, value+written, value_sz-written);
 		if(ret < 1) {
-			perror("write()");
+			log_perror("write()");
 			close(fd);
 			return(-1);
 		}

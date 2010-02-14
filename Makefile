@@ -7,7 +7,7 @@ CPU = generic
 ARCH = generic
 
 #### CPU dependant optimizations
-CPU_CFLAGS.generic    = -O2
+CPU_CFLAGS.generic    = -Os
 CPU_CFLAGS.i686       = -O2 -march=i686
 CPU_CFLAGS            = $(CPU_CFLAGS.$(CPU))
 
