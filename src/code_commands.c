@@ -117,9 +117,13 @@ ST_RES *cmd_code_load(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || !req->key_sz || !req->value_sz)
 		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 	
-	if(NULL != find_process(req->key, req->key_sz))
-		return(set_error_code(res, MEMCACHE_STATUS_KEY_EXISTS, NULL));
+	if(CONFIG(conn)->vx32_disabled) {
+		return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND, "Command disabled by configuration"));
+	}
 	
+	if(NULL != find_process(req->key, req->key_sz))
+		return(set_error_code(res, MEMCACHE_STATUS_KEY_EXISTS, NULL));	
+
 	int r;
 	char c_file[1024];
 	char elf_file[1024];
@@ -132,7 +136,7 @@ ST_RES *cmd_code_load(CONN *conn, ST_REQ *req, ST_RES *res) {
 	res->value = res->buf;
 	
 	r = write_file(c_file, req->value, req->value_sz);
-	if(NEVER(0 != r)) {
+	if(0 != r) { // never
 		res->status = MEMCACHE_STATUS_ITEM_NOT_STORED;
 		res->value_sz += snprintf(&res->value[res->value_sz], res->buf_sz - res->value_sz, "Error while saving file: %s", strerror(errno));
 		return(res);
@@ -175,6 +179,10 @@ ST_RES *cmd_code_unload(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || !req->key_sz || req->value_sz)
 		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
 	
+	if(CONFIG(conn)->vx32_disabled) {
+		return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND, "Command disabled by configuration"));
+	}
+	
 	struct process *process = find_process(req->key, req->key_sz);
 	if(NULL == process)
 		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, NULL));
@@ -194,6 +202,10 @@ ST_RES *cmd_code_unload(CONN *conn, ST_REQ *req, ST_RES *res) {
 ST_RES *cmd_code_check(CONN *conn, ST_REQ *req, ST_RES *res) {
 	if(req->extras_sz || !req->key_sz || req->value_sz)
 		return(set_error_code(res, MEMCACHE_STATUS_INVALID_ARGUMENTS, NULL));
+	
+	if(CONFIG(conn)->vx32_disabled) {
+		return(set_error_code(res, MEMCACHE_STATUS_UNKNOWN_COMMAND, "Command disabled by configuration"));
+	}
 	
 	struct process *process = find_process(req->key, req->key_sz);
 	if(NULL == process)

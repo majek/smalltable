@@ -183,13 +183,14 @@ char *read_full_file(char *filename) {
 	if(-1 == fd_size(fd, &file_size)) { // never
 		goto error;
 	}
-	char *buf = (char*)malloc(file_size);
+	char *buf = (char*)malloc(file_size+1);
 	int ret = read(fd, buf, file_size);
 	if(ret != file_size) { // never
 		free(buf);
 		goto error;
 	}
 	close(fd);
+	buf[file_size] = '\0';
 	return(buf);
 error:; { // never
 	close(fd);

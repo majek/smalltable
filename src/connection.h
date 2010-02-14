@@ -24,3 +24,4 @@ void conn_send(CONN *conn);
 
 int conn_stop(struct server *server, CONN *exception);
 int conn_start(struct server *server);
+int conn_free_all(struct server *server);

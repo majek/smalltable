@@ -24,6 +24,10 @@ enum {
 extern int vx_elfbigmem;
 
 void process_initialize(struct config *config) {
+	if(config->vx32_disabled) {
+		return;
+	}
+
 	vx_elfbigmem = 0;
 	vx32_siginit();
 	

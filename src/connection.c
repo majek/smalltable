@@ -198,3 +198,14 @@ int conn_start(struct server *server) {
 	server->stopped = 0;
 	return conn__do_for_all(server, NULL, META_EVENT_REGISTER);
 }
+
+int conn_free_all(struct server *server) {
+	struct list_head *pos, *q;
+	int i = 0;
+	list_for_each_safe(pos, q, &(server->root)) {
+		CONN *conn = list_entry(pos, CONN, list);
+		conn_close(conn); // list_del is there
+		i++;
+	}
+	return(i);
+}

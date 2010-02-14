@@ -13,12 +13,12 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 	
 	struct config *config = (struct config*)conn->server->userdata;
 	
-	// TODO: static?
-	static struct st_server *servers[MAX_SERVERS];
+	struct st_server *servers[8];
 	int servers_no = 0;
 	
-	// TODO: static?
+	// at some point this should be thread-safe
 	static struct st_server *order[MAX_QUIET_REQUESTS];
+	
 	int requests = 0;
 	while(end_req_buf - req_buf) {
 		int request_sz = MC_GET_REQUEST_SZ(req_buf);
@@ -50,9 +50,15 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 			}
 			srv->requests++;
 			order[requests] = srv;
+			/* can't risk more - too many servers */
+			if(servers_no == NELEM(servers))
+				break;
 		}
 		req_buf += request_sz;
 		requests++;
+		/* can't risk more - too many requests */
+		if(requests == NELEM(order))
+			break;
 	}
 	assert(requests <= MAX_QUIET_REQUESTS);
 	

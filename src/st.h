@@ -15,6 +15,7 @@ struct config {
 	
 	char *tmpdir;
 	
+	int vx32_disabled;
 	int syscall_limit;
 	char *vx32sdk_gcc_command;
 	char *vx32sdk_path;

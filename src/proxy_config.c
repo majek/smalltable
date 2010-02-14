@@ -66,8 +66,8 @@ char *load_config_from_string(struct config *config, char *buf, int testing) {
 	int port, key_sz;
 	int proxies = 0, servers = 0;
 	
-	char *lines[MAX_CONFIG_LINES];
-	int lines_no = split_line(lines, NELEM(lines), buf, "\n\r", "");
+	char **lines = (char**)malloc(sizeof(char*) * MAX_CONFIG_LINES);
+	int lines_no = split_line(lines, MAX_CONFIG_LINES, buf, "\n\r", "");
 	
 	int line_no = 0;
 	for(line_no = 0; line_no < lines_no; line_no++) {
@@ -133,8 +133,10 @@ char *load_config_from_string(struct config *config, char *buf, int testing) {
 		err = "No servers defined in config. It's broken!";
 		goto error;
 	}
+	free(lines);
 	return(NULL);
 error:;
+	free(lines);
 	static char line[256];
 	snprintf(line, sizeof(line), "%s on line %i", err, line_no+1);
 	return(line);
@@ -154,6 +156,11 @@ void load_config(struct config *config) {
 	}
 	
 	free(data);
+}
+
+void unload_config(struct config *config) {
+	free_all_servers(config);
+	free_all_proxies(config);
 }
 
 char *strip(char *s) {

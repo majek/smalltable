@@ -1,7 +1,7 @@
 CC = gcc
 LD = $(CC)
 
-DEBUG_CFLAGS = -g -fstack-protector-all -Wstack-protector -fstack-check
+DEBUG_CFLAGS = -g
 
 CPU = generic
 ARCH = generic
@@ -27,7 +27,7 @@ ADDLIB =
 INC=-Ivx32/src
 LIB=-levent
 
-COPTS_COV=--coverage -DCOVERAGE_TEST -fPIC
+COPTS_COV=--coverage -DCOVERAGE_TEST -fPIC -fstack-protector-all -Wstack-protector -fstack-check
 COPTS_PROF=-pg
 
 LDFLAGS_COV=--coverage

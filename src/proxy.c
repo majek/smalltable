@@ -12,7 +12,6 @@ extern char *optarg;
 
 static void info_handler(void *arg) {
 	//struct config *config = (struct config*)arg;
-	log_info("Received info request.");
 	int pool_items, pool_bytes;
 	get_pool_size(&pool_items, &pool_bytes);
 	log_info("Memory stats: %iMB in %i items in pool. Pool freed.",
@@ -98,7 +97,7 @@ int main(int argc, char *argv[]) {
 	}
 	char buf[256];
 	snprintf(buf, sizeof(buf), "%s.new", config->config_path);
-	config->config_path_new = strdup(buf);
+	config->config_path_new = buf;
 	
 	log_info("Process pid %i", getpid());
 	signal(SIGPIPE, SIG_IGN);
@@ -108,6 +107,11 @@ int main(int argc, char *argv[]) {
 	do_event_loop(server);
 	
 	log_info("Quit");
+	unload_config(config);
+	pool_free();
+	
+	free(server);
+	free(config);
 	
 	exit(0);
 	return(0);

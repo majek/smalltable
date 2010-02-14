@@ -101,6 +101,7 @@ VERSION_STRING " - a light and fast key-value server\n"
 "Useless options:\n"
 "  -v, --verbose             print more useless debugging messages\n"
 "  -x, --ping-parent         send SIGURG to parent pid after successfull binding\n"
+"  -n, --no-vx32             disable vx32 engine\n"
 "  -s, --vx32sdk=PATH        vx32sdk directory that contains includes and libs\n"
 "                            (default=%s)\n"
 "  -t, --tmpdir=PATH         temporary directory path; it's used as a storage\n"
@@ -143,6 +144,7 @@ int main(int argc, char *argv[]) {
 		{"vx32sdk", required_argument, 0, 's'},
 		{"tmpdir", required_argument, 0, 't'},
 		{"engine", required_argument, 0, 'e'},
+		{"no-vx32", no_argument, 0, 'n'},
 		{0, 0, 0, 0}
 	};
 	
@@ -165,7 +167,7 @@ int main(int argc, char *argv[]) {
 	int option_index;
 	int arg;
 	char *engine_name = NULL;
-	while((arg = getopt_long_only(argc, argv, "hxvl:p:g:s:t:e:", long_options, &option_index)) != EOF) {
+	while((arg = getopt_long_only(argc, argv, "hxvnl:p:g:s:t:e:", long_options, &option_index)) != EOF) {
 		switch(arg) {
 		case 'h':
 			print_help(server, config);
@@ -186,7 +188,8 @@ int main(int argc, char *argv[]) {
 				fatal("Port number broken: %i", server->port);
 			break;
 		case 'g':
-			config->vx32sdk_gcc_command = optarg;
+			free(config->vx32sdk_gcc_command);
+			config->vx32sdk_gcc_command = strdup(optarg);
 			break;
 		case 's':
 			config->vx32sdk_path = optarg;
@@ -196,6 +199,9 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'e':
 			engine_name = optarg;
+			break;
+		case 'n':
+			config->vx32_disabled = 1;
 			break;
 		case 0:
 		default:
@@ -231,6 +237,12 @@ int main(int argc, char *argv[]) {
 	log_info("Quit");
 	process_destroy();
 	commands_destroy();
+	pool_free();
+	
+	engine_destroy(config->api);
+	free(config->vx32sdk_gcc_command);
+	free(config);
+	free(server);
 	
 	exit(0);
 	return(0);

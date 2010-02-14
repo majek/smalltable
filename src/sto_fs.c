@@ -117,22 +117,22 @@ int fs_set(void *storage_data, char *value, int value_sz, char *key, int key_sz)
 		if(mkdir(dir2, S_IRWXU) != 0 && errno != EEXIST) {
 			if(errno == ENOENT) {
 				if(mkdir(dir1, S_IRWXU) != 0 && errno != EEXIST) {
-					perror("mkdir()");
+					log_perror("mkdir(%s)", dir1);
 					return(-1);
 				}
 				if(mkdir(dir2, S_IRWXU) != 0 && errno != EEXIST) {
-					perror("mkdir()");
+					log_perror("mkdir(%s)", dir2);
 					return(-1);
 				}
 			} else {
-				perror("mkdir()");
+				log_perror("mkdir(%s)", dir2);
 				return(-1);
 			}
 		}
 		fd = open(path_new, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
 	}
 	if(fd == -1) {
-		perror("open()");
+		log_perror("open(%s)", path_new);
 		return(-1);
 	}
 	
@@ -193,7 +193,7 @@ static int get_filename_i_cas(char *path, u_int64_t *i_cas_ptr) {
 		log_perror("stat()");
 		return(-1);
 	}
-	*i_cas_ptr = st.st_size << 40 | st.st_ino << 32 | (st.st_mtime + st.st_mtim.tv_nsec);
+	*i_cas_ptr = st.st_size << 40 | st.st_mtime << 32 | st.st_mtim.tv_nsec;
 	return(0);
 }
 

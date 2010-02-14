@@ -132,18 +132,20 @@ static struct event *catch_signal(int sig_no, ev_callback_t handler, struct serv
 	return(ev);
 }
 
-static void ev_close(struct event *ev, int fd) {
+static void ev_close(struct event *ev, int fd, int do_free) {
 	if(ev)
 		event_del(ev);
 	if(fd >= 0)
 		close(fd);
+	if(do_free)
+		free(ev);
 }
 
 void do_event_loop(struct server *server) {
 	struct server *srv;
 	struct event *sigev[5];
 	log_info("Libevent version: %s", event_get_version());
-	event_init();
+	struct event_base *base = event_init();
 
 	sigev[0] = catch_signal(SIGINT,  &signal_quit, server);
 	sigev[1] = catch_signal(SIGTERM, &signal_quit, server);
@@ -165,8 +167,13 @@ void do_event_loop(struct server *server) {
 			log_error("event_dispatch() = %i", r);
 	}
 	int i;
-	for(i=0; i<sizeof(sigev)/sizeof(sigev[0]); i++)
-		ev_close(sigev[i], -1);
-	if(srv)
-		ev_close(&srv->ev, srv->sd);
+	for(i=0; i<NELEM(sigev); i++) {
+		ev_close(sigev[i], -1, 1);
+	}
+	if(srv) {
+		conn_free_all(srv);
+		ev_close(&srv->ev, srv->sd, 0);
+	}
+	
+	event_base_free(base);
 }

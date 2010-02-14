@@ -1,0 +1,12 @@
+{
+   broken inet_ntoa
+   Memcheck:Leak
+   fun:malloc
+   fun:inet_ntoa
+   fun:net_accept
+   fun:server_callback
+   fun:event_base_loop
+   fun:do_event_loop
+   fun:main
+}
+
