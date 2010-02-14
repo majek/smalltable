@@ -210,7 +210,7 @@ int syscall_write(CONN *conn, struct process *process, vxproc *proc, vxmmap *m, 
 	if (!vxmem_checkperm(proc->mem, addr, len, VXPERM_READ, NULL)) {
 		return(-EINVAL);
 	}
-	char buf[4096];
+	char buf[1024];
 	strncpy(buf, (char*)m->base + addr, MIN(sizeof(buf), len));
 	buf[MIN(len, sizeof(buf)-1)] = '\0';
 	if(strlen(buf)>0 && buf[strlen(buf)-1] == '\n')

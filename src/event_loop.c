@@ -163,8 +163,9 @@ void do_event_loop(struct server *server) {
 		log_perror("Can't bind to socket %s:%i", server->host, server->port);
 	} else {
 		int r = event_dispatch();
-		if(NEVER(r != 0))
+		if(r != 0) { // never
 			log_error("event_dispatch() = %i", r);
+		}
 	}
 	int i;
 	for(i=0; i<NELEM(sigev); i++) {

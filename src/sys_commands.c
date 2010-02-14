@@ -153,8 +153,9 @@ ST_RES *cmd_set(ST_STORAGE_API *api, ST_REQ *req, ST_RES *res) {
 		return(set_error_code(res, MEMCACHE_STATUS_KEY_NOT_FOUND, NULL));
 	
 	ret = storage_set(api, &md, req->value, req->value_sz, req->key, req->key_sz);
-	if(NEVER(ret < 0))
+	if(ret < 0) { // never
 		return(set_error_code(res, MEMCACHE_STATUS_ITEM_NOT_STORED, NULL));
+	}
 	
 	res->cas = md.cas;
 	res->status = MEMCACHE_STATUS_OK;

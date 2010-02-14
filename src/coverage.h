@@ -11,6 +11,7 @@
 # define unlikely(X)  !!(X)
 #endif
 
+# if 0 // apparently these macros are introducing more problems than they solve
 #if defined(COVERAGE_TEST)
 # define ALWAYS(X)      (1)
 # define NEVER(X)       (0)
@@ -20,4 +21,4 @@
 # define ALWAYS(X)      (likely(X))
 # define NEVER(X)       (unlikely(X))
 #endif
-
+#endif

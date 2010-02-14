@@ -77,8 +77,8 @@ int command_find_by_process_ud(void *process_ud) {
 static void try_prefetch(ST_STORAGE_API *api, char *start_req_buf, int start_req_buf_sz) {
 	#define BULK_SZ 4096
 	int b_sz = 0;
-	char *b_key[BULK_SZ];
-	int b_key_sz[BULK_SZ];
+	static char *b_key[BULK_SZ]; // no thread safe
+	static int b_key_sz[BULK_SZ];
 
 	int first_run = 1;
 
@@ -139,8 +139,9 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 		void *ptr = cmd_pointers[cmd].ptr;
 		int flags = cmd_pointers[cmd].flags;
 		if(group_ptr == ptr && group_flags == flags) { /* swallow */
-			if(NEVER(conn->server->trace))
+			if(conn->server->trace) { // never
 				log_info("%s:%i             cmd=0x%02x(%i)", conn->host, conn->port, cmd, cmd);
+			}
 			// pass;
 		} else {
 			if(likely(group_req_buf_sz)) {
@@ -149,8 +150,9 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 					group_req_buf, group_req_buf_sz,
 					&conn->send_buf, group_flags, group_ptr);
 			}
-			if(NEVER(conn->server->trace))
+			if(conn->server->trace) { // never
 				log_info("%s:%i flags=0x%x(%i) ptr=%p cmd=0x%02x(%i)", conn->host, conn->port, flags, flags, ptr, cmd, cmd);
+			}
 			group_req_buf = req_buf;
 			group_req_buf_sz = 0;
 			group_ptr = ptr;
@@ -177,10 +179,10 @@ int process_multi(CONN *conn, char *start_req_buf, int start_req_buf_sz) {
 
 void commands_initialize() {
 	int fd = open("/dev/urandom", O_RDONLY);
-	if(ALWAYS(fd >= 0)) {
+	if(fd >= 0) { // always
 		int r = read(fd, &unique_number, sizeof(unique_number));
 		r = r;
-		if(NEVER(r != sizeof(unique_number))) {
+		if(r != sizeof(unique_number)) { // never
 			fd = -1;
 		}
 		close(fd);

@@ -31,7 +31,7 @@ void get_pool_size(int *counter_ptr, int *memory_wasted_ptr);
 
 static inline void* st_malloc(int size) {
 	void *buf = malloc( size );
-	if(NEVER(NULL == buf)) {
+	if(NULL == buf) { // never
 		pool_free();
 		buf = malloc( size );
 		if(NULL == buf) {
@@ -44,7 +44,7 @@ static inline void* st_malloc(int size) {
 
 static inline void* st_realloc(void *user_buf, int size) {
 	void *buf = realloc(user_buf, size);
-	if(NEVER(NULL == buf)) {
+	if(NULL == buf) { // never
 		pool_free();
 		buf = realloc(user_buf, size);
 		if(NULL == buf) {
@@ -57,7 +57,7 @@ static inline void* st_realloc(void *user_buf, int size) {
 
 static inline void* st_calloc(int items, int size) {
 	void *buf = calloc(items, size);
-	if(NEVER(NULL == buf)) {
+	if(NULL == buf) { // never
 		pool_free();
 		buf = calloc(items, size);
 		if(NULL == buf) {

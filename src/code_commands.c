@@ -33,7 +33,7 @@ int process_compile(struct config *config, char *c_file, char *elf_file, char *d
 	snprintf(log_file, sizeof(log_file), "%s.log", elf_file);
 	
 	unlink(elf_file);
-	char cmd[4096];
+	char cmd[1024];
 	snprintf(cmd, sizeof(cmd),
 			config->vx32sdk_gcc_command,
 			config->vx32sdk_path, elf_file, c_file, log_file);
@@ -54,13 +54,13 @@ int process_compile(struct config *config, char *c_file, char *elf_file, char *d
 
 int write_file(char *fname, char *value, int value_sz) {
 	int fd = open(fname, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-	if(NEVER(fd < 0)) {
+	if(fd < 0) { // never
 		return(-1);
 	}
 	
 	int r = write(fd, value, value_sz);
 	r = r;
-	if(NEVER(r != value_sz)) {
+	if(r != value_sz) { // never
 		int saved_errno = errno;
 		close(fd);
 		errno = saved_errno;
@@ -82,7 +82,7 @@ int process_test_str(struct config *config, char *value, int value_sz, char *key
 		log_perror("write()");
 		return(-1);
 	}
-	char warn_buf[4096];
+	char warn_buf[1024];
 	int warn_buf_sz = 0;
 	if(0 != process_compile(config, c_file, elf_file, warn_buf, sizeof(warn_buf), &warn_buf_sz)) {
 		warn_buf[MAX(1, warn_buf_sz)-1] = '\0';
