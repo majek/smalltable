@@ -46,6 +46,10 @@ static void readahead(void *storage_data, char **keys, int *key_szs, int items_c
 	ydb_prefetch(ydbd->ydb, keys, sz, items_counter);
 }
 
+static int get_keys(void *storage_data, char *buf, int buf_sz, char *key, int key_sz) {
+	YDB_DATA *ydbd = (YDB_DATA *)storage_data;
+	return ydb_get_keys(ydbd->ydb, key, key_sz, buf, buf_sz);
+}
 
 ST_STORAGE_API *storage_ydb_create(int argc, char **argv) {
 	if(argc < 1)
@@ -69,6 +73,7 @@ ST_STORAGE_API *storage_ydb_create(int argc, char **argv) {
 	api->sync = &sync;
 	api->readahead = &readahead;
 	api->storage_data = ydbd;
+	api->get_keys = &get_keys;
 	return(api);
 }
 

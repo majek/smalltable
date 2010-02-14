@@ -197,8 +197,6 @@ static int get_filename_i_cas(char *path, u_int64_t *i_cas_ptr) {
 	return(0);
 }
 
-
-
 struct PACKED key_item {
 	u_int64_t i_cas;
 	u_int8_t key_sz;

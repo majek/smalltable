@@ -233,6 +233,8 @@ error:
 	return(-1);
 }
 
+#define MAX_CONFIG_SIZE (MAX_CONFIG_LINES*1024)
+
 int save_config(struct config *config) {
 	FILE *fd;
 	fd = fopen(config->config_path_new, "w");
@@ -240,12 +242,11 @@ int save_config(struct config *config) {
 		log_error("Can't write to config file \"%s\".", config->config_path_new);
 		return(-1);
 	}
-	char *buf = (char*)malloc(1*1024*1024);
-	int buf_sz = 1*1024*1024;
-	int r = config_to_string(config, buf, buf_sz);
+	char *buf = (char*)malloc(MAX_CONFIG_SIZE);
+	int r = config_to_string(config, buf, MAX_CONFIG_SIZE);
 	if(r < 0)
 		goto error;
-	buf[buf_sz] = '\0';
+	buf[MAX_CONFIG_SIZE-1] = '\0';
 	fputs(buf, fd);
 	
 	free(buf);
