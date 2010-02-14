@@ -35,7 +35,7 @@ static inline void* st_malloc(int size) {
 		pool_free();
 		buf = malloc( size );
 		if(NULL == buf) {
-			log_error("Can't allocate memory!");
+			log_error("Can't allocate %i bytes of memory!", size);
 			fatal("Can't allocate memory!");
 		}
 	}
@@ -48,7 +48,7 @@ static inline void* st_realloc(void *user_buf, int size) {
 		pool_free();
 		buf = realloc(user_buf, size);
 		if(NULL == buf) {
-			log_error("Can't re-allocate memory!");
+			log_error("Can't re-allocate %i bytes of memory!", size);
 			fatal("Can't re-allocate memory!");
 		}
 	}
@@ -61,7 +61,7 @@ static inline void* st_calloc(int items, int size) {
 		pool_free();
 		buf = calloc(items, size);
 		if(NULL == buf) {
-			log_error("Can't re-allocate memory!");
+			log_error("Can't re-allocate %i bytes of memory!", size);
 			fatal("Can't re-allocate memory!");
 		}
 	}

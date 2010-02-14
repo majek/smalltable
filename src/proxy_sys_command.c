@@ -16,11 +16,11 @@ typedef ST_RES* (*system_cmd_t)(CONN *conn, ST_REQ *req, ST_RES *res);
 struct {
 	system_cmd_t foo;
 } cmd_pointers[] = {
-	[PROXY_CMD_GET_CONFIG]		{&cmd_get_config},
-	[PROXY_CMD_SET_CONFIG]		{&cmd_set_config},
-	[PROXY_CMD_STOP]		{&cmd_stop},
-	[PROXY_CMD_START]		{&cmd_start},
-	[MEMCACHE_CMD_NOOP]		{&cmd_noop}
+	[PROXY_CMD_GET_CONFIG]		= {&cmd_get_config},
+	[PROXY_CMD_SET_CONFIG]		= {&cmd_set_config},
+	[PROXY_CMD_STOP]		= {&cmd_stop},
+	[PROXY_CMD_START]		= {&cmd_start},
+	[MEMCACHE_CMD_NOOP]		= {&cmd_noop}
 };
 
 

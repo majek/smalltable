@@ -1,5 +1,8 @@
-#include <stdlib.h>
+#define _BSD_SOURCE  // strdup
+
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
@@ -179,7 +182,7 @@ void conn_send(CONN *conn) {
 static int conn__do_for_all(struct server *server, CONN *exception, int flag) {
 	struct list_head *pos;
 	int i = 0;
-	list_for_each(pos, &(server->root)) {
+	list_for_each(pos, &server->root) {
 		CONN *conn = list_entry(pos, CONN, list);
 		if(conn != exception) {
 			i++;

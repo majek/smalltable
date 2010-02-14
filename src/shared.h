@@ -1,8 +1,13 @@
 #ifndef _SHARED_H
 #define _SHARED_H
 
+
+
 #include <sys/types.h>
+typedef __u_char u_char;
+
 #include <event.h>
+
 /* derived from libevent */
 typedef void (*ev_callback_t)(int,short,void*);
 

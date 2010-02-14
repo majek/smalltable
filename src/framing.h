@@ -58,7 +58,7 @@ struct memcache_header{
 	char *extras;		\
 	uint32_t extras_sz;	\
 	char *value;		\
-	uint32_t value_sz;	\
+	uint32_t value_sz
 
 struct st_req{
 	Frame_Request_Prefix;

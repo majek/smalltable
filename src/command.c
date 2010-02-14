@@ -18,10 +18,10 @@
 u_int64_t unique_number;
 
 #define SYSTEM_CMD(cmd, ptr, flag) \
-	[cmd]		{(void*)ptr, CMD_FLAG_RO | flag}
+	[cmd]		={(void*)ptr, CMD_FLAG_RO | flag}
 
 #define PROCESS_CMD(cmd, ptr, flag) \
-	[cmd]		{(void*)ptr, CMD_FLAG_RO | CMD_FLAG_EXTRA_PARAM | flag}
+	[cmd]		={(void*)ptr, CMD_FLAG_RO | CMD_FLAG_EXTRA_PARAM | flag}
 
 struct cmd_pointers cmd_pointers[256] = {
 	SYSTEM_CMD(MEMCACHE_CMD_GET, &cmd_get, CMD_FLAG_PREFETCH),
@@ -185,8 +185,8 @@ void commands_initialize() {
 		}
 		close(fd);
 	}
-	if(NEVER(fd < 0)) {
-		log_error("Can't read from /dev/urandom. Starting with reduced randomness.");
+	if(fd < 0) { // never
+		log_error("Can't read from /dev/urandom. Starting with reduced randomnes%c.", 's');
 		srand(time(NULL));
 		unique_number = ((u_int64_t)rand() << 32) || ((u_int64_t)rand());
 	}

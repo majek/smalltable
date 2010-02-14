@@ -369,7 +369,7 @@ int syscall_st_prefetch(CONN *conn, struct process *process, vxproc *proc, vxmma
 		int i;
 		/* fix key pointers */
 		for(i=0; i < items_counter; i++) {
-			uint32_t addr = keys[i];
+			uint32_t addr = (long)keys[i];
 			if(!vxmem_checkperm(proc->mem, addr, keys_sz[i], VXPERM_READ, NULL)) {
 				log_error("bad param");
 				return(-EINVAL);
