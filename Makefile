@@ -86,7 +86,7 @@ main:	prerequisits
 	@echo 
 	@echo "Please select storage backends you need and type "
 	@echo 
-	@echo "   $$ make all"
+	@echo "   $$ make all <parameters>"
 	@echo 
 	@echo "Possible storage engines:"
 	@echo "      USE_TOKYOCABINET - TokyoCabinet library"

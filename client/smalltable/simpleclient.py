@@ -212,18 +212,6 @@ def _set_ridiculously_high_buffers(sd):
                 break
 
 
-def _encode(value):
-    if isinstance(value, str):
-        return value, FLAG_RAWSTRING
-    return pickle.dumps(value, pickle.HIGHEST_PROTOCOL), FLAG_PICKLED
-
-def _decode(value, flags):
-    if flags == FLAG_RAWSTRING:
-        return value
-    if flags == FLAG_PICKLED:
-        return pickle.loads(value)
-    raise MemcachedEncodingError('unknown flags 0x%x' % (flags,))
-
 
 class NetworkConnecton:
     RESTART_DELAY_MIN = 0.1
@@ -381,11 +369,24 @@ FLAG_PICKLED = 0x01
 FLAG_RAWSTRING = 0x02
 
 class Client:
+    def _encode(self, value):
+        if isinstance(value, str):
+            return value, FLAG_RAWSTRING
+        return pickle.dumps(value, pickle.HIGHEST_PROTOCOL), FLAG_PICKLED
+
+    def _decode(self, value, flags):
+        if flags == FLAG_RAWSTRING:
+            return value
+        if flags == FLAG_PICKLED:
+            return pickle.loads(value)
+        raise MemcachedEncodingError('unknown flags 0x%x' % (flags,))
+
     server_addr = None
     conn = None
 
-    def __init__(self, *args, **kwargs):
-        self.conn = NetworkConnecton( *args, **kwargs )
+    def __init__(self, server_addr, **kwargs):
+        self.server_addr = server_addr
+        self.conn = NetworkConnecton(server_addr, **kwargs )
 
     def close(self):
         self.conn.close()
@@ -396,7 +397,7 @@ class Client:
         for i, (r_status, r_cas, r_extras, r_key, r_value) in enumerate(self.conn.recv_till_noop()):
             if r_status is STATUS_NO_ERROR:
                 r_flags, = struct.unpack('!I', r_extras)
-                key_map[keys[i]] = _decode(r_value, r_flags)
+                key_map[keys[i]] = self._decode(r_value, r_flags)
             elif r_status is STATUS_KEY_NOT_FOUND:
                 key_map[keys[i]] = default
             else:
@@ -406,7 +407,7 @@ class Client:
     def set_multi(self, key_map):
         items = key_map.items()
         def _req(key, value):
-            enc_val, flags = _encode(value)
+            enc_val, flags = self._encode(value)
             return {'opcode':OP_SET, 'key':key, 'extras': struct.pack('!II', flags, 0x0), 'value':enc_val, 'reserved':RESERVED_FLAG_QUIET}
         self.conn.send_with_noop( _req(key, value) for key, value in items )
         for i, (r_status, r_cas, r_extras, r_key, r_value) in enumerate(self.conn.recv_till_noop()):
@@ -436,6 +437,12 @@ class Client:
         r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
                             self.conn.single_cmd(opcode=OP_CODE_LOAD, key=key, value=code)
         if r_status is not STATUS_NO_ERROR and r_status is not STATUS_KEY_EXISTS:
+            if r_status is STATUS_ITEM_NOT_STORED:
+                import sys
+                print >> sys.stderr, "Can't load code!"
+                print >> sys.stderr, r_value
+                sys.exit(-1)
+                print repr(status_exceptions[r_status](key=r_key))
             raise status_exceptions[r_status](key=r_key, value=r_value)
         return True
 
@@ -494,14 +501,19 @@ class Client:
         return self._custom_command(opcode=OP_NOOP)
 
 
-def code_loader(filename):
+def code_loader(module, list_of_files):
+    if not isinstance(list_of_files, list):
+        list_of_files = [list_of_files]
     def decor(fun):
         @functools.wraps(fun)
         def wrapper(self, *args, **kwargs):
             try:
                 return fun(self, *args, **kwargs)
             except MemcachedUnknownCommand:
-                code = open(pkg_resources.resource_filename(__name__, filename)).read()
+                code = '\n\n'.join( 
+                    open(pkg_resources.resource_filename(module, path)).read()
+                        for path in list_of_files
+                )
                 self.code_load( code )
                 return fun(self, *args, **kwargs)
         return wrapper
@@ -509,7 +521,7 @@ def code_loader(filename):
 
 
 class IncrClient(Client):
-    @code_loader('plugin_incr.c')
+    @code_loader(__name__, 'plugin_incr.c')
     def _do_incr(self, opcode, key, amount, initial, expiration):
         extras = struct.pack("!QQI", amount, initial, expiration)
         r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
