@@ -62,8 +62,7 @@ ST_STORAGE_API *storage_ydb_create(int argc, char **argv) {
 
 	ydbd->ydb = ydb_open(db_file, 4, 512*1024*1024, YDB_CREAT);
 	if(ydbd->ydb == NULL) {
-		fprintf(stderr, "ydb_create()=NULL\n");
-		abort();
+		fatal("ydb_create()=NULL");
 	}
 	
 	ST_STORAGE_API *api = (ST_STORAGE_API *)calloc(1, sizeof(ST_STORAGE_API));

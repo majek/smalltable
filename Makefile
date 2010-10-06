@@ -104,13 +104,14 @@ main:	prerequisits
 	@echo
 	@exit 1
 
-DEBS=libevent-dev gcc make python
+DEBS=libevent-dev gcc make python 
+#gcc-multilib
 prerequisits:
 	@if [ -e $(shell which dpkg) ]; then	\
 		dpkg -l $(DEBS) >/dev/null || (	\
 			echo;	\
 			echo "Make sure you have all dependencies installed:";	\
-			echo "    apt-get install $(DEBS)";		\
+			echo "    sudo apt-get install $(DEBS)";		\
 			echo;	\
 			exit 1;);	\
 	fi

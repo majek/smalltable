@@ -30,17 +30,17 @@ void process_initialize(struct config *config) {
 
 	vx_elfbigmem = 0;
 	vx32_siginit();
-	
+
 	struct itimerval timer;
-	/* Configure the timer to expire after 1000 msec... */
+	/* Configure the timer to expire after ... */
 	timer.it_value.tv_sec = 0;
-	timer.it_value.tv_usec = 500*1000;
-	/* ... and every 1000 msec after that. */
+	timer.it_value.tv_usec = 10*1000*1000;
+	/* ... and every ... after that. */
 	timer.it_interval.tv_sec = 0;
-	timer.it_interval.tv_usec = 500*1000;
+	timer.it_interval.tv_usec = 10*1000*1000;
 	/* Start a virtual timer. It counts down whenever this process is executing. */
 	setitimer(ITIMER_VIRTUAL, &timer, NULL);
-	
+
 	/* Check if we can compile and load simple program */
 	char *code =  \
 		"#include <stdlib.h>\n"
@@ -147,8 +147,6 @@ error:;
 	process_free(process);
 	return;
 }
-
-
 
 enum {
 	SYSCALLRET_CONTINUE = 1,
@@ -498,7 +496,6 @@ int process_load(struct process *process, char *elf_filename) {
 	const char *environ[]={NULL, NULL};
 
 	int r = vxproc_loadelffile(p, elf_filename, argv, environ);
-	r = r;
 	if(r < 0) { // no coverage
 		log_perror("#%p vxproc_loadelffile", process);
 		vxproc_free(p);
@@ -556,7 +553,7 @@ int process_run(CONN *conn, struct process *process) {
 			}
 			goto loop_again; }
 		case VXTRAP_PAGEFAULT:
-			log_warn("#%p segmentation fault (Reference to inaccessible page)", process);
+			log_warn("#%p segmentation fault (Reference to inaccessible page) EIP=%p", process, process->p->cpu->eip);
 			return(-1);
 		default:
 			if (rc < 0) {

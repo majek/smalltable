@@ -43,6 +43,7 @@ import fcntl
 import os
 import functools
 import pkg_resources
+import itertools
 import logging
 log = logging.getLogger(__name__)
 
@@ -477,28 +478,65 @@ class Client:
         r_opcode, r_status, r_cas, r_extras, r_key, r_value = \
                             self.conn.single_cmd(opcode=OP_GET_KEYS, key=key)
         if r_status is STATUS_NO_ERROR:
+            t0 = time.time()
+            a = []
             v = r_value
             i = 0
-            while i < len(v):
+            aa = len(v)
+            while i < aa:
                 i_cas, key_sz = struct.unpack_from("@QB", v, i)
-                key = v[i+9:i+9+key_sz]
-                i += 9 + key_sz
-                yield i_cas, key
-            return
+                j = i+9
+                k = j + key_sz
+                key = v[j:k]
+                i = k
+                a.append( (i_cas, key) )
+            t1 = time.time()
+            print " %.3fms" % ((t1-t0) * 1000.0,)
+            return a
         raise status_exceptions[r_status](value=r_value)
 
     def get_keys(self):
         key = ''
+        b = []
         while True:
-            was = False
-            for i_cas, key in self._get_keys(key):
-                yield i_cas, key
-                was = True
-            if was == False:
+            a = self._get_keys(key)
+            if not a:
                 break
+            b.append( a )
+            i_cas, key = a[-1]
+        return itertools.chain(*b)
 
     def noop(self):
         return self._custom_command(opcode=OP_NOOP)
+
+    def clone_get_multi(self, keys, default=None):
+        keys = list(keys)
+        self.conn.send_with_noop( {'opcode':OP_GET, 'key':key, 'reserved':RESERVED_FLAG_QUIET}  for key in keys )
+        clone_list = []
+        for i, (r_status, r_cas, r_extras, r_key, r_value) in enumerate(self.conn.recv_till_noop()):
+            if r_status is STATUS_NO_ERROR:
+                r_flags, = struct.unpack('!I', r_extras)
+                clone_list.append( (keys[i], r_flags, r_value) )
+            elif r_status is STATUS_KEY_NOT_FOUND:
+                pass
+            else:
+                raise status_exceptions[r_status](key=keys[i])
+        return clone_list
+
+    def clone_set_multi(self, clone_list, default=None):
+        def _req(key, flags, value):
+            return {
+                'opcode':OP_SET,
+                'key':key,
+                'extras': struct.pack('!II', flags, 0x0),
+                'value': value,
+                'reserved':RESERVED_FLAG_QUIET,
+            }
+        self.conn.send_with_noop( _req(key, flags, value) for key, flags, value in clone_list )
+        for i, (r_status, r_cas, r_extras, r_key, r_value) in enumerate(self.conn.recv_till_noop()):
+            if r_status is not STATUS_NO_ERROR:
+                raise status_exceptions[r_status](key=items[i])
+        return True
 
 
 def code_loader(module, list_of_files):

@@ -38,7 +38,7 @@ $(UNTRUSTED)/include:
 
 $(UNTRUSTED)/elf_i386_0x00048000.x:
 	cp libst/elf_i386_0x00048000.x $(UNTRUSTED)
-	
+
 $(UNTRUSTED)/include/smalltable.h:
 	cp libst/smalltable.h $(UNTRUSTED)/include
 
@@ -66,7 +66,6 @@ AR=ar
 $(UNTRUSTED)/libst.a: $(LIBST_OBJS)
 	$(AR) r $@ $<
 
-	
 
 clean::
 	make -C $(VX32DIR) clean

@@ -160,7 +160,7 @@ struct mc_metadata{
 };
 typedef struct mc_metadata MC_METADATA;
 
-#define READ_REQUESTS_BUF_SZ MAX_REQUEST_SIZE
+#define READ_REQUESTS_BUF_SZ (MAX_REQUEST_SIZE * 2)
 #define WRITE_RESPONSES_BUF_SZ (MAX_REQUEST_SIZE + sizeof(MC_METADATA))
 
 #define MEMCACHE_CMD_GET	0x00 //   Get

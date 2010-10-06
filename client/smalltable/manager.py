@@ -60,6 +60,7 @@ def do_health(options):
     return
 
 def key_difference(old, new, ratio):
+    print "getting keys"
     old_cas_keys = set(old.get_keys())
     old_keys = sorted(k for i_cas, k in old_cas_keys)
     
@@ -79,10 +80,17 @@ def key_difference(old, new, ratio):
     raw_input()
     
     to_copy = list(to_copy)
-    a = old.get_multi(to_copy)
-    new.set_multi(a)
-    new.delete_multi( to_del )
+    while to_copy:
+        to_copy_now, to_copy = to_copy[:64000], to_copy[64000:]
+        a = old.clone_get_multi(to_copy_now)
+        new.clone_set_multi(a)
+        print >> sys.stderr, 'c',
     
+    while to_del:
+        to_del_now, to_del = to_del[:64000], to_del[64000:]
+        new.delete_multi( to_del_now )
+        print >> sys.stderr, 'd',
+    print >> sys.stderr, ''
     return boundry, set([(i_cas, k) for i_cas, k in old_cas_keys if k >= boundry])
 
 
@@ -106,8 +114,8 @@ def do_add(options, oldhost, newhost, new_weight=10):
     new_keys = [k for _,k in (upd_cas_key - old_cas_key)]
     del_keys = list(set([k for _,k in old_cas_key]) - set([k for _,k in upd_cas_key]))
     print "Updated items %i, removed items %i" % (len(new_keys), len(del_keys))
-    a = old.get_multi(new_keys)
-    new.set_multi(a)
+    a = old.clone_get_multi(new_keys)
+    new.clone_set_multi(a)
     new.delete_multi( del_keys )
 
     options.servers[oldhost] = (old, old_weight, (l_key, boundry) )
@@ -129,7 +137,9 @@ def do_add(options, oldhost, newhost, new_weight=10):
 
     del_keys = [k for _,k in upd_cas_key]
     print "Removing %i keys from old server" % (len(del_keys),)
-    old.delete_multi( del_keys )
+    while del_keys:
+        del_keys_now, del_keys = del_keys[:64000], del_keys[64000:]
+        old.delete_multi( del_keys_now )
 
     return
 
