@@ -1,4 +1,3 @@
-
 import functools
 import smalltable
 import os
@@ -8,7 +7,7 @@ server = '127.0.0.1'
 port = os.getenv('SERVERPORT', '22122')
 
 def new_connection():
-    return smalltable.Client(['%s:%s' % (server, port)])
+    return smalltable.Client('%s:%s' % (server, port))
 
 def simple_new_connection():
     return simpleclient.Client("%s:%s" % (server, port))

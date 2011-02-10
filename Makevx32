@@ -55,6 +55,7 @@ VX32COPTS=-m32 \
 			-I$(VX32DIR) \
 			-ggdb \
 			-mfp-ret-in-387 \
+			-mno-tls-direct-seg-refs \
 			-I $(UNTRUSTED)/include
 
 

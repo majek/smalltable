@@ -171,7 +171,7 @@ int storage_get(MC_METADATA *md, char *value, int value_sz, char *key, int key_s
 
 int storage_set(MC_METADATA *md, char *value, int value_sz, char *key, int key_sz) {
 	/* assumption -> more free space after value, to fit MC_METADATA there */
-	char prev[sizeof(MC_METADATA)];
+	static char prev[sizeof(MC_METADATA)];
 	
 	/* save contents of value memory, above value_sz! */
 	memcpy(prev, value+value_sz, sizeof(MC_METADATA));
