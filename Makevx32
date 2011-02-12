@@ -56,6 +56,8 @@ VX32COPTS=-m32 \
 			-ggdb \
 			-mfp-ret-in-387 \
 			-mno-tls-direct-seg-refs \
+			-fno-stack-protector \
+			-nostdlib \
 			-I $(UNTRUSTED)/include
 
 
