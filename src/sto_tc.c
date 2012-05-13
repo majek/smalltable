@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
 
 #include "shared.h"
 #include "storage.h"
@@ -8,6 +10,45 @@
 #include <tcutil.h>
 #include <tchdb.h>
 #include <stdbool.h>
+
+char *encode_str(char *dst_start, const char *src, int src_sz)
+{
+	char tohex[] = "0123456789abcdef";
+	char *dst = dst_start;
+	int i;
+	for(i=0; i<src_sz; i++) {
+		unsigned char c = (unsigned char)src[i];
+		if (isprint(c) && !isspace(c) && c != '\\' && c != '/') {
+			*dst++ = c;
+		} else {
+			*dst++ = '\\';
+			*dst++ = 'x';
+			*dst++ = tohex[(c >> 4) & 0xF];
+			*dst++ = tohex[(c) & 0xF];
+		}
+	}
+	*dst++ = '\0';
+	return dst_start;
+}
+
+
+void do_print(char *type, char *key, int key_sz, char *value, int value_sz)
+{
+	char *nk = NULL;
+	if (key_sz > 0) {
+		nk = alloca(key_sz * 4 + 1);
+		encode_str(nk, key, key_sz);
+	}
+	char *nv = NULL;
+	if (value_sz > 0) {
+		nv = alloca(value_sz * 4 + 1);
+		encode_str(nv, value, value_sz);
+	}
+
+	printf("%s %s %s\n", type, nk ?: "", nv ?: "");
+}
+
+
 
 struct tc_data{
 	char *db_file;
@@ -19,6 +60,7 @@ extern const char *tcversion;
 
 // -1 -> not exists
 int tc_get(void *storage_data, char *dst, int size, char *key, int key_sz) {
+	do_print("GET", key, key_sz, NULL, 0);
 	TC_DATA *tcd = (TC_DATA *)storage_data;
 	int ret = tchdbget3(tcd->hdb, key, key_sz, dst, size);
 	return(ret);
@@ -27,6 +69,7 @@ int tc_get(void *storage_data, char *dst, int size, char *key, int key_sz) {
 // -1 -> not exits
 // else: removed
 int tc_del(void *storage_data, char *key, int key_sz) {
+	do_print("DEL", key, key_sz, NULL, 0);
 	TC_DATA *tcd = (TC_DATA *)storage_data;
 	if( tchdbout(tcd->hdb, key, key_sz) )
 		return(0);
@@ -36,6 +79,7 @@ int tc_del(void *storage_data, char *key, int key_sz) {
 // written bytes
 // -1 -> not saved
 int tc_set(void *storage_data, char *value, int value_sz, char *key, int key_sz) {
+	do_print("SET", key, key_sz, value, value_sz);
 	TC_DATA *tcd = (TC_DATA *)storage_data;
 	int ret = tchdbput(tcd->hdb, key, key_sz, value, value_sz);
 	if(ret)
@@ -44,6 +88,7 @@ int tc_set(void *storage_data, char *value, int value_sz, char *key, int key_sz)
 }
 
 void tc_sync(void *storage_data) {
+	do_print("SYNC", NULL, 0, NULL, 0);
 	TC_DATA *tcd = (TC_DATA *)storage_data;
 	tchdbsync(tcd->hdb);
 }

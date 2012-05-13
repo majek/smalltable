@@ -1,3 +1,5 @@
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -12,8 +14,9 @@ always:
  
  assumption -> more free space after value, see __reserved_for_cas
  
- KEY should not be in the same memory as VALUE!
+ KEY should not be in the same buffer as VALUE.
 */
+
 
 int storage_get(ST_STORAGE_API *api, MC_METADATA *md, char *value, int value_sz, char *key, int key_sz) {
 	/* assumption -> more free space after value, see __reserved_for_cas */
@@ -45,7 +48,6 @@ int storage_set(ST_STORAGE_API *api, MC_METADATA *md, char *value, int value_sz,
 	
 	/*restore contents */
 	memcpy(value+value_sz, prev, sizeof(MC_METADATA));
-	
 	return(ret);
 }
 
@@ -67,6 +69,7 @@ void storage_prefetch(ST_STORAGE_API *api, char **keys, int *key_sz, int items_c
 int storage_get_keys(ST_STORAGE_API *api, char *buf, int buf_sz, char *key, int key_sz) {
 	if(api->get_keys)
 		return api->get_keys(api->storage_data, buf, buf_sz, key, key_sz);
+	do_print("GET_KEYS", NULL, 0, NULL, 0);
 	return -1;
 }
 
